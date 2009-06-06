@@ -1,5 +1,5 @@
 """
-Project: slatt
+Project: Slatt
 Package: slarule
 Creation: december 4th, 2008, deeply revised since
 Programmers: JLB

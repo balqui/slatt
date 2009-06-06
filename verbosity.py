@@ -1,6 +1,6 @@
 """
-Project: slatt
-Package: verbosity - baselevel for Google Code
+Project: Slatt
+Package: verbosity
 Created: Apr 16th, 2009, on the basis of a lot of previous work, then revised
 Programmers: JLB
 

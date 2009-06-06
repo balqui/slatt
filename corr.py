@@ -1,6 +1,6 @@
 """
-Project: slatt
-Package: corr - baselevel for Google Code
+Project: Slatt
+Package: corr
 Creation: november 25th, 2008, and thoroughly revised afterwards
 Programmers: JLB
 
