@@ -1,5 +1,5 @@
 """
-Project: slatt
+Project: Slatt
 Package: slanode
 Programmers: JLB
 

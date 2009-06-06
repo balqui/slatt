@@ -1,5 +1,5 @@
 """
-Project: slatt
+Project: Slatt
 Package: hypergraph - taken almost verbatim from mid 2007 implementation
 Programmers: JLB
 
