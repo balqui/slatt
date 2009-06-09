@@ -3,19 +3,21 @@ Project: Slatt
 Package: slanode
 Programmers: JLB
 
-Purpose: implementing lattice nodes 
+Purpose: implementing lattice nodes and other itemset usages such as generators
 
-Inherits from frozenset:
-.adds supp, card, setsupp()
+Inherits from frozenset so that they can index dictionaries
+
+Offers:
+.supp, card, setsupp()
 ..this last op needed because I cannot manage to inform it upon __init__()
-.also placeholders 
+.placeholders 
 ..mxs (max supp of a subset)
 ..mns (min supp of a superset)
-..gmxs (max supp of a minimal generator)
+..gmxs (max supp of a minimal generator that reaches some conf thr to the node)
+.revise() to change the contents of the slanode while preserving the mxs/mns values - returns a new slanode
 .package contributes ops outside class:
 ..set2node to make a slanode from an iterable like set or frozenset
 ..str2node to make a slanode by parsing a line like the Borgelt output
-.revise() to change the contents of the slanode while preserving the mxs/mns values - returns a new slanode
 .auxitset(string-or-another-iterable), auxiliary class to parse into set and support
 ..then coerce into slanode the auxitset and call setsupp(supp)
 
@@ -94,6 +96,9 @@ class slanode(frozenset):
     def copy(self):
         ss = slanode(self)
         ss.setsupp(self.supp)
+        ss.mxs = self.mxs
+        ss.gmxs = self.gmxs
+        ss.mns = self.mns
         return ss
 
     def revise(self,c):

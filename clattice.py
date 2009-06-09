@@ -17,13 +17,17 @@ Offers:
 .init from dataset, but checks for existence of closure file to see if can spare the apriori call
 .computing closure op
 .to string method
+.scale: to use ints instead of floats for support/confidence bounds
+..and also for conf/width/block factor bounds in other classes
+..allows one to index already-computed bases or cuts
+..and also to handle the choices [0,1]-float versus percent-float transparently
 
 ToDo:
+.URGENT: THINK ABOUT mns AND mxs FOR EXTREME CASES SUCH AS EMPTYSET OR BOTTOM OR TOPS OR...
 .handle the call to Borgelt's apriori on Linux
 .avoid calling Borgelt's apriori if closures file already available
 .be able to load only a part of the closures in the available file if desired support is higher than in the file
 .review the ticking rates
-.URGENT: THINK ABOUT mns AND mxs FOR EXTREME CASES SUCH AS EMPTYSET OR BOTTOM OR TOPS OR...
 ..for instance: if mxs zero, option is conservative estimate minsupp-1
 .is it possible to save time somehow using immpreds to compute mxn/mns?
 .should become a set of closures? 
@@ -45,11 +49,14 @@ class clattice:
     CLOSFILE checked for existence under name TRANSFILE_clSUPPORTs.txt
     where SUPPORT is the integer indicating existing minimum absolute support
     Fields:
+    Scale to avoid floats in supp/conf/etc
     Universe set U
     Number of closures card
     List of closures closeds
     Dictionary of closed predecessors for each closure
     Maximum and minimum supports seen (absolute integers)
+    supp_percent, float in [0,100] actually used for the mining
+    (may be strictly lower than minsupp actually seen)
     Number of transactions in the original dataset nrtr
     Number of different items in the original dataset nrits
     Number of item occurrences in the original dataset nrocc
@@ -57,19 +64,29 @@ class clattice:
     """
 
     def __init__(self,supp,datasetfile="",v=None):
-        "float supp - read from closures file or create it from dataset"
+        "float supp in [0,1] - read from clos file or create it from dataset"
         if v==None:
             self.v = verbosity()
         else:
             self.v = v
         self.U = set([])
+        self.scale = 100000
         self.closeds = []
+        self.mustsort = False
         self.v.inimessg("Initializing lattice") 
         if datasetfile == "":
             self.v.messg(" with just a bottom empty closure.")
             self.addempty(0)
+            self.nrocc = 0
+            self.nrtr = 0
+            self.nrits = 0
+            self.supp_percent = 0.0
+            self.card = 0
+            self.maxsupp = 0
+            self.minsupp = 0
+            self.preds = {}
         else:
-##          try:
+          try:
             dataset = file("%s.txt" % datasetfile)
             self.v.zero(250)
             self.v.messg("from file "+datasetfile+".txt... computing some parameters...")
@@ -84,20 +101,21 @@ class clattice:
                         self.nrocc += 1
                         uset.add(el)
             self.nrits = len(uset)
-            self.minsupp = floor(supp*self.nrtr)
-            if self.minsupp == 0:
-                "apriori implementation does not work with support zero"
-                supp_percent = 0.001
+            if supp == 0:
+                "apriori implementation might not work with support zero"
+                self.supp_percent = 0.001
             else:
-                supp_percent = float(floor(supp*10000))/100.0
+                "there remains a scale issue to look at in the clfile name"
+                self.supp_percent = self.topercent(supp)
             self.v.messg("platform appears to be "+system()+"...")
-            clfile = "%s_cl%ds.txt" % (datasetfile,self.minsupp)
-            cmmnd = ('./apriori.exe -tc -l1 -u0 -v" /%%a" -s%2.3f %s.txt ' % (supp_percent,datasetfile)) + clfile
+            clfile = "%s_cl%2.3fs.txt" % (datasetfile,self.supp_percent)
+            cmmnd = ('./apriori.exe -tc -l1 -u0 -v" /%%a" -s%2.3f %s.txt ' % (self.supp_percent,datasetfile)) + clfile
             if False:
                 "ToDo: avoid calling apriori if closures file already available"
                 pass
             elif system()=="Linux":
-                "ToDo: make this case work"
+                "ToDo: make this case work - maybe try uncommenting the next line"
+##                call(cmmnd,shell=True)
                 self.v.errmessg("Platform "+system()+" not handled yet, sorry")
             elif system()=="Windows":
                 self.v.messg("computing closures by: \n        "+cmmnd+"\n")
@@ -111,7 +129,7 @@ class clattice:
                 ff = file("NonexistentFileToRaiseAnExceptionDueToUnhandledSystem")
             self.card = 0
             self.maxsupp = 0
-            self.trueminsupp = self.nrtr+1
+            self.minsupp = self.nrtr+1
             self.preds = {}
             self.v.zero(250)
             for line in file(clfile):
@@ -120,19 +138,24 @@ class clattice:
                 newnode = self.newclosure(line)
                 if newnode.supp > self.maxsupp:
                     self.maxsupp = newnode.supp
-                if newnode.supp != 0 and newnode.supp < self.trueminsupp:
-                    self.trueminsupp = newnode.supp
+                if newnode.supp != 0 and newnode.supp < self.minsupp:
+                    self.minsupp = newnode.supp
             self.v.messg("...done;")
             if self.maxsupp < self.nrtr:
                 "no bottom itemset, common to all transactions - hence add emtpy"
                 self.addempty(self.nrtr)
                 self.v.messg("adding emptyset as bottom closure;")
+            if self.mustsort:
+                self.v.messg("sorting...")
+                self.closeds.sort()
             self.v.messg(str(self.card)+" closures found;") 
             self.v.messg("max support is "+str(self.maxsupp))
             self.v.messg("and effective absolute support threshold is "+str(self.minsupp)+
-                      (", equivalent to %2.2f%s.\n"%(float(self.minsupp*100)/self.nrtr,"%")))
-##          except:
-##            self.v.errmessg("Please check file " + datasetfile + ".txt is there, platform is handled, and everything else.")
+                      (", equivalent to %2.3f" % (float(self.minsupp*100)/self.nrtr)) +
+                         "% of " + str(self.nrtr) + " transactions.")
+          except:
+            "ToDo: refine, now the catch-all makes debugging difficult"
+            self.v.errmessg("Please check file " + datasetfile + ".txt is there, platform is handled, and everything else.")
 
     def newclosure(self,st):
         """
@@ -169,8 +192,9 @@ class clattice:
             self.card += 1
             self.preds[node] = []
             if len(above)>0:
-                "closures in file not in order, may be a problem somewhere else"
-                self.v.errmessg("Closure "+st+" is a predecessor of earlier nodes")
+                "closures in file not in order"
+                self.v.errmessg("[Warning] Closure "+st+" is a predecessor of earlier nodes")
+                self.mustsort = True
                 if len(above)==1:
                     self.v.messg("("+str(above[0])+")\n")
             for e in above:
@@ -200,6 +224,14 @@ class clattice:
         self.card += 1
         self.closeds.insert(0,node)
 
+    def topercent(self,anysupp):
+        """
+        anysupp expected in [0,1], eg a support bound
+        gets translated into percent and truncated according to scale
+        (e.g. for scale 100000 means three decimal places)
+        """
+        return 100.0*floor(self.scale*anysupp)/self.scale
+
     def __str__(self):
         s = ""
         for e in sorted(self.closeds):
@@ -224,12 +256,15 @@ class clattice:
         return st in self.closeds
 
 if __name__=="__main__":
+    "ToDo: use messg instead of print?"
+
     fnm = "e13"
+
     la = clattice(0,fnm)
-##    fnm = "mvotes"
-##    la = clattice(0.2,fnm)
+
     la.v.inimessg("Module clattice running as test on file "+fnm+".txt.")
-    print "Lattice read in:"
+
+    print "\nLattice read in:"
     print la
     print "Closure of ac:", la.close(set2node(auxitset("a c")))
     print "Closure of ab:", la.close(str2node("a b"))
@@ -238,8 +273,4 @@ if __name__=="__main__":
     print "Is ac with support closed?", la.isclosed(str2node("a c / 7777"))
     print "Is ab with support and noise closed?", la.isclosed(str2node("a b(  (  ( /   3456)"))
 
-##    print "Similar, but with itsetstr instead of auxitset:"
-##    print la.isclosed(itsetstr("a c"))
-##    print la.isclosed(itsetstr("a b"))
-##    print itsetstr("a b(  (  ( /   3456)")
     

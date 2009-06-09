@@ -28,7 +28,7 @@ class slarule:
 
     def __init__(self,a,c,vb=None):
         """
-       vb verbosity object for errmessg's
+        vb verbosity object for errmessg's
         """
         if vb != None:
             self.v = vb
@@ -80,6 +80,7 @@ class slarule:
             "will raise shortly a zero-division exception"
             self.v.errmessg("Unexpected zero support for"+str(self.an))
         if self.an.supp < nrtr or nrtr==0:
+            "must rethink this part"
             self.wdn = float(self.an.mns)/self.an.supp
             self.widthval = self.wdn
         if self.cn.mxs != 0:
@@ -90,10 +91,6 @@ class slarule:
                 self.widthval = min(self.wup,self.wdn)
         return self.widthval
         
-    def __cmp__(self,another_rule):
-        "check this out -- seems what I need in mineGD" 
-        return cmp(len(self.an),len(another_rule.an))
-
     def __str__(self):
         s = ""
         for el in sorted(self.an):
