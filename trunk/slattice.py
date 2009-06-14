@@ -11,14 +11,12 @@ Inherits from clattice; use clattice when only closures are needed,
 and slattice when the minimal generators of each closure are also needed.
 
 Fields: 
-hist_cuts: all cuts computed so far, so that they are not recomputed
-hist_trnsl: all transversals computed so far, so that they are not recomputed
-mingens: a corr maintaining the nontrivial minimal generators for each closure
-.antecedents of the iteration-free basis of Wild, Pfaltz-Taylor, Pasquier-Bastide, Zaki...
-GDmingens: a corr with the antecedents of the GD basis
+.hist_trnsl: all transversals computed so far, so that they are not recomputed
+.mingens: a corr maintaining the nontrivial minimal generators for each closure
+..antecedents of the iteration-free basis of Wild, Pfaltz-Taylor, Pasquier-Bastide, Zaki...
+.GDmingens: a corr with the antecedents of the GD basis
 
 Methods available:
-.dump_hist_cuts
 .findmingens: to compute the minimal generators of all closures via
   transversals of immediate predecessors obtained as negative cuts,
   (note that no tightening is necessary)
@@ -33,7 +31,6 @@ Auxiliary local methods:
 ToDo:
 .revise and enlarge the local testing, particularly the cuts
 .revise ticking rates
-.rethink the scale, now 10000 means two decimal places for percentages
 .some day it can be used on file containing larger-support closures
 .note: sometimes the supp is lower than what minsupp indicates; this may be
 ..due to an inappropriate closures file, or due to the fact that indeed there
@@ -59,97 +56,38 @@ class slattice(clattice):
     def __init__(self,supp,datasetfile="",v=None):
         "get the closures, find minimal generators, set their mns"
         clattice.__init__(self,supp,datasetfile,v)
-        self.mingens = {}
-        self.GDgens = {}
+        self.mingens = corr()
+        self.GDgens = corr()
         self.hist_cuts = {}
         self.hist_trnsl = {}
         self.findmingens()
         self.setmns()
 
-    def dump_hist_cuts(self):
-        "prints out all the cuts so far - useful mostly for testing"
-        for e in self.hist_cuts.keys():
-            print "\nMinimal closed antecedents at conf thr", e
-            pos = self.hist_cuts[e][0]
-            for ee in pos.keys():
-                print ee, ":",
-                for eee in pos[ee]: print eee,
-                print
-            print "Maximal closed nonantecedents at conf thr", e
-            neg = self.hist_cuts[e][1]
-            for ee in neg.keys():
-                print ee, ":",
-                for eee in neg[ee]: print eee,
-                print
 
     def _faces(self,itst,listpred):
         "listpred assumed immediate preds of itst - make hypergraph of differences"
         itst = set(itst)
         return hypergraph(itst,[ itst - e for e in listpred ])
 
-    def _setcuts(self,scsthr,sccthr,forget=False):
+    def _findinmingens(self,upbd,st):
         """
-        supp/conf already scaled thrs in [0,self.scale]
-        computes all cuts for that supp/conf thresholds, if not computed yet;
-        keeps them in hist_cuts to avoid duplicate computation (unless forget);
-        the cut for each node consists of two corrs, pos and neg border:
-        hist_cuts : supp/conf thr -> (pos,neg)
-        pos : node -> min ants,  neg : node -> max nonants
-        UNCLEAR WHETHER IT WORKS FOR A SUPPORT DIFFERENT FROM self.minsupp
+        must be a set that appears in mingen as itset with extra info
+        WHAT IF NOT FOUND?
+        THIS PART HAS TO BE RETHOUGHT AGAIN...
         """
-        if (scsthr,sccthr) in self.hist_cuts.keys():
-            return self.hist_cuts[scsthr,sccthr]
-        cpos = corr()
-        cneg = corr()
-        self.v.zero(500)
-        self.v.messg("...computing (non-)antecedents...")
-        for nod in self.closeds:
-            "review carefully and document this loop"
-            self.v.tick()
-            if self.scale*nod.supp >= self.nrtr*scsthr:
-                pos, neg = self._cut(nod,sccthr) 
-                cpos[nod] = pos
-                cneg[nod] = neg
-        if not forget: self.hist_cuts[scsthr,sccthr] = cpos, cneg
-        self.v.messg("...done;")
-        return cpos, cneg
-
-    def _cut(self,node,thr):
-        """
-        splits preds of node at cut given by
-        min thr-antecedents and max non-thr-antecedents
-        think about alternative algorithmics
-        thr expected scaled according to self.scale
-        """
-        yesants = []
-        notants = []
-        for m in self.preds[node]:
-            "there must be a better way of doing all this!"
-            if self.scale*node.supp >= thr*m.supp:
-                yesants.append(m)
-            else:
-                notants.append(m)
-        minants = []
-        for m in yesants:
-            "keep only minimal antecedents - candidate to separate program?"
-            for mm in yesants:
-                if mm < m:
+        for m in self.mingens[upbd]:
+            if m <= st and st <= m:
+                return m
+        for nd in self.preds[upbd]:
+            for m in self.mingens[nd]:
+                if m <= st and st <= m:
                     break
             else:
-                minants.append(m)
-        maxnonants = []
-        for m in notants:
-            "keep only maximal nonantecedents"
-            for mm in notants:
-                if m < mm:
-                    break
-            else:
-                maxnonants.append(m)
-        return (minants,maxnonants)
+                continue
+            return m
+        return None
 
-## method _findmingens hopefully unnecessary from now on
-
-##    def _findinmingens(self,st):
+##    def _findinmingens(self,st):  OOLLLDDDD
 ##        "must be a set that appears in mingen as itset with extra info - WHAT IF NOT FOUND?"
 ##        for m in self.mingens:
 ##            if m <= st and st <= m:
@@ -184,7 +122,7 @@ class slattice(clattice):
         if len(self.mingens)>0:
             return self.mingens
         self.v.inimessg("Computing cuts for minimal generators...")
-        nonants = self._setcuts(sthr,self.scale,False)[1]
+        nonants = self.setcuts(sthr,self.scale,False)[1]
         self.v.zero(250)
         self.v.messg("computing transversal antecedents...")
         for nod in self.closeds:
@@ -213,7 +151,7 @@ class slattice(clattice):
 ##        if sthr in self.hist_GD.keys():
 ##            return self.hist_GD[sthr]
         self.v.zero(250)
-        self.v.inimessg("Filtering minimal generators to obtain Guigues-Duquenne basis...")
+        self.v.inimessg("Filtering minimal generators to obtain the Guigues-Duquenne basis...")
         for c1 in self.closeds:
             self.v.tick()
             self.GDgens[c1] = set([])
@@ -235,6 +173,7 @@ class slattice(clattice):
                     else:
                         "else of for: not subsumed"
                         self.GDgens[c1].add(g1new)
+        self.v.messg("...done.\n")
 
 
     def setmns(self):
@@ -260,12 +199,15 @@ class slattice(clattice):
 if __name__ == "__main__":
 
     from slarule import slarule
-
+    from slanode import str2node
+    
 ## CHOOSE A DATASET:
 ##    filename = "pumsb_star"
     filename = "e13"
 ##    filename = "mvotes"
 ##    filename = "toyGD"
+##    filename = "cmc_eindh4"
+    
 
 ## CHOOSE A SUPPORT CONSTRAINT:
 # forty percent (recommended for pumsb_star):
@@ -277,19 +219,17 @@ if __name__ == "__main__":
 # other figures (recommended for toys e13 and toyGD):
     supp = 1.0/13
 ##    supp = 0
+##    supp = 70.0/1473
 
-## CHOOSE WHAT TO SEE (recommended: see lattice and test cuts only on toys):
+## CHOOSE WHAT TO SEE (recommended: see lattice only on toys):
 
-    see_whole_lattice = True
+    see_whole_lattice = False
     
-    test_cut_on_a = True
-    test_all_cuts = True
-
 ## (recommended: first, just count them; see them only after you know how big they are)
-    see_it_free_basis = True
+    see_it_free_basis = False
     count_it_free_basis = True
 
-    see_GD_basis = True
+    see_GD_basis = False
     count_GD_basis = True
 
 
@@ -298,26 +238,6 @@ if __name__ == "__main__":
     la = slattice(supp,filename)
 
     if see_whole_lattice: print la
-
-    if test_cut_on_a:
-        (y,n) = la._cut(la.close(set2node("a")),int(0.1*la.scale))
-        print "cutting at threshold", 0.1
-        print "pos cut at a:", y
-        print "neg cut at a:", n
-
-    if test_all_cuts:
-        print "cutting all nodes now at threshold", 0.75
-        for nd in la.closeds:
-            print
-            print "At:", nd
-            print "  mxs:", nd.mxs, "mns:", nd.mns
-            (y,n) = la._cut(nd,int(0.75*la.scale))
-            print "pos cut:",
-            for st in y: print st,
-            print
-            print "neg cut:",
-            for st in n: print st,
-            print
 
     if count_it_free_basis or see_it_free_basis:
 
@@ -352,3 +272,6 @@ if __name__ == "__main__":
         if count_GD_basis: 
             print
             print cntGD, "rules in the Guigues-Duquenne basis"
+
+    print "ALSO!", la._findinmingens(la.closeds[6],str2node("a b"))
+    

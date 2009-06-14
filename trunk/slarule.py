@@ -42,8 +42,10 @@ class slarule:
         self.apprwidthval = -1
         self.confval = -1
 
-    def supp(self):
-        return self.cn.supp
+    def supp(self,nrtr=0):
+        if nrtr == 0:
+            return self.cn.supp
+        return float(self.cn.supp)/nrtr
 
     def sets(self):
         return (self.an,self.cn)
@@ -91,17 +93,44 @@ class slarule:
                 self.widthval = min(self.wup,self.wdn)
         return self.widthval
         
-    def __str__(self):
+    def __str__(self,trad={}):
         s = ""
         for el in sorted(self.an):
+            if el in trad.keys(): el = trad[el]
             s += el + " "
         s += "=>"
         for el in sorted(self.cn):
             if not el in self.an:
+                if el in trad.keys(): el = trad[el]
                 s += " " + el
         return s
 
+    def outstr(self,nrtr,trad={}):
+        "extended version of __str__ with conf, supp, and width"
+        out = "[ w: " + ("%3.3f" % self.width(nrtr)) 
+        out += "  c: " + ("%3.3f" % self.conf())
+        out += "  s: " + ("%3.3f%%" % (100.0*self.supp(nrtr))) + " ]  "
+        out += self.__str__(trad)
+        return out
 
+def printrules(dic,nrtr,outfile=None,trad={},reflex=False):
+        """
+        auxiliary method, outside the class!
+        dic, a dict mapping consequents to antecedents
+        nrtr, dataset size
+        outfile, filename for the output
+        trad, dict mapping item translations
+        reflex at True forces to write rules with empty rhs
+        """
+        cnt = 0
+        for cn in dic.keys():
+            for an in dic[cn]:
+                if an < cn or reflex:
+                    cnt += 1
+                    r = slarule(an,cn)
+                    if not outfile: print r.outstr(nrtr,trad)
+                    else: outfile.write(r.outstr(nrtr,trad)+"\n")
+        return cnt
 
 if __name__=="__main__":
 
