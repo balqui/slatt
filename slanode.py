@@ -80,10 +80,15 @@ class slanode(frozenset):
     def setsupp(self,supp):
         self.supp = supp
 
-    def __str__(self):
-        "prettyprint of itemset: support omitted if zero"
+    def __str__(self,trad={}):
+        """
+        prettyprint of itemset: support omitted if zero
+        optional element translator trad
+        """
         s = ""
         for el in sorted(self):
+            if  el in trad.keys():
+                el = trad[el]
             if s=="":
                 s = str(el)
             else:

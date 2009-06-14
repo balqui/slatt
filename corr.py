@@ -19,6 +19,8 @@ ToDo:
 .try to find better algorithmics
 """
 
+from slarule import slarule
+
 class corr(dict):
 
     def __init__(self):
@@ -38,6 +40,21 @@ class corr(dict):
                 else:
                     valids.append(g)
             self[e] = valids
+
+##    def printrules(self):
+##        """
+##        interpret the correspondence as association rules:
+##        for each consequent cn, self[cn] is the list of antecedents
+##        """
+##        #########################
+##        for nod in self.keys():
+##            self.v.tick()
+##            for an in ants[nod]:
+##                out.newrule(slarule(an,nod))
+##        if not forget: self.hist_RR[sthr,cthr] = out
+##        self.v.messg("...done; "+str(out.nrimpls)+" rules found.\n")
+##        return out
+
 
 if __name__=="__main__":
 

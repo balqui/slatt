@@ -7,13 +7,9 @@ Programmers: JLB
 
 Purpose: implement a lattice by lists of antecedents among closed itsets
 
-Note: 
-this version should always know the dataset size; however, previous versions
-did not, and unknown dataset sizes were represented as size zero in field nrtr;
-this, together with the test to add the empty set as a closure, is relevant 
-for the correct handling of the empty set in package allattice.
-
 Offers:
+.hist_cuts: all cuts computed so far, so that they are not recomputed
+.dump_hist_cuts
 .init from dataset, but checks for existence of closure file to see if can spare the apriori call
 .computing closure op
 .to string method
@@ -26,6 +22,7 @@ ToDo:
 .URGENT: THINK ABOUT mns AND mxs FOR EXTREME CASES SUCH AS EMPTYSET OR BOTTOM OR TOPS OR...
 .handle the call to Borgelt's apriori on Linux
 .avoid calling Borgelt's apriori if closures file already available
+.rethink the scale, now 100000 means three decimal places for percentages
 .be able to load only a part of the closures in the available file if desired support is higher than in the file
 .review the ticking rates
 ..for instance: if mxs zero, option is conservative estimate minsupp-1
@@ -37,7 +34,9 @@ from verbosity import verbosity
 from slanode import slanode, str2node, set2node, auxitset
 from subprocess import call
 from platform import system
+from glob import glob
 from math import floor
+from corr import corr
 
 class clattice:
     """
@@ -72,11 +71,11 @@ class clattice:
         self.U = set([])
         self.scale = 100000
         self.closeds = []
+        self.hist_cuts = {}
         self.mustsort = False
         self.v.inimessg("Initializing lattice") 
         if datasetfile == "":
             self.v.messg(" with just a bottom empty closure.")
-            self.addempty(0)
             self.nrocc = 0
             self.nrtr = 0
             self.nrits = 0
@@ -85,6 +84,7 @@ class clattice:
             self.maxsupp = 0
             self.minsupp = 0
             self.preds = {}
+            self.addempty(0)
         else:
           try:
             dataset = file("%s.txt" % datasetfile)
@@ -107,20 +107,22 @@ class clattice:
             else:
                 "there remains a scale issue to look at in the clfile name"
                 self.supp_percent = self.topercent(supp)
-            self.v.messg("platform appears to be "+system()+"...")
             clfile = "%s_cl%2.3fs.txt" % (datasetfile,self.supp_percent)
+            suchfiles = glob(datasetfile+"_cl*s.txt")
             cmmnd = ('./apriori.exe -tc -l1 -u0 -v" /%%a" -s%2.3f %s.txt ' % (self.supp_percent,datasetfile)) + clfile
-            if False:
-                "ToDo: avoid calling apriori if closures file already available"
+            if clfile in suchfiles:
+                "avoid calling apriori if closures file already available"
                 pass
             elif system()=="Linux":
                 "ToDo: make this case work - maybe try uncommenting the next line"
 ##                call(cmmnd,shell=True)
                 self.v.errmessg("Platform "+system()+" not handled yet, sorry")
             elif system()=="Windows":
+                self.v.messg("platform appears to be "+system()+";")
                 self.v.messg("computing closures by: \n        "+cmmnd+"\n")
                 call(cmmnd)
             elif system()=="CYGWIN_NT-5.1":
+                self.v.messg("platform appears to be "+system()+";")
                 self.v.messg("computing closures by: \n        "+cmmnd+"\n")
                 call(cmmnd,shell=True)
             else:
@@ -255,8 +257,84 @@ class clattice:
         "test closedness of set st according to current closures list"
         return st in self.closeds
 
+    def dump_hist_cuts(self):
+        "prints out all the cuts so far - useful mostly for testing"
+        for e in self.hist_cuts.keys():
+            print "\nMinimal closed antecedents at conf thr", e
+            pos = self.hist_cuts[e][0]
+            for ee in pos.keys():
+                print ee, ":",
+                for eee in pos[ee]: print eee,
+                print
+            print "Maximal closed nonantecedents at conf thr", e
+            neg = self.hist_cuts[e][1]
+            for ee in neg.keys():
+                print ee, ":",
+                for eee in neg[ee]: print eee,
+                print
+
+    def setcuts(self,scsthr,sccthr,forget=False):
+        """
+        supp/conf already scaled thrs in [0,self.scale]
+        computes all cuts for that supp/conf thresholds, if not computed yet;
+        keeps them in hist_cuts to avoid duplicate computation (unless forget);
+        the cut for each node consists of two corrs, pos and neg border:
+        hist_cuts : supp/conf thr -> (pos,neg)
+        pos : node -> min ants,  neg : node -> max nonants
+        UNCLEAR WHETHER IT WORKS FOR A SUPPORT DIFFERENT FROM self.minsupp
+        """
+        if (scsthr,sccthr) in self.hist_cuts.keys():
+            return self.hist_cuts[scsthr,sccthr]
+        cpos = corr()
+        cneg = corr()
+        self.v.zero(500)
+        self.v.messg("...computing (non-)antecedents...")
+        for nod in self.closeds:
+            "review carefully and document this loop"
+            self.v.tick()
+            if self.scale*nod.supp >= self.nrtr*scsthr:
+                pos, neg = self._cut(nod,sccthr) 
+                cpos[nod] = pos
+                cneg[nod] = neg
+        if not forget: self.hist_cuts[scsthr,sccthr] = cpos, cneg
+        self.v.messg("...done;")
+        return cpos, cneg
+
+    def _cut(self,node,thr):
+        """
+        splits preds of node at cut given by
+        min thr-antecedents and max non-thr-antecedents
+        think about alternative algorithmics
+        thr expected scaled according to self.scale
+        """
+        yesants = []
+        notants = []
+        for m in self.preds[node]:
+            "there must be a better way of doing all this!"
+            if self.scale*node.supp >= thr*m.supp:
+                yesants.append(m)
+            else:
+                notants.append(m)
+        minants = []
+        for m in yesants:
+            "keep only minimal antecedents - candidate to separate program?"
+            for mm in yesants:
+                if mm < m:
+                    break
+            else:
+                minants.append(m)
+        maxnonants = []
+        for m in notants:
+            "keep only maximal nonantecedents"
+            for mm in notants:
+                if m < mm:
+                    break
+            else:
+                maxnonants.append(m)
+        return (minants,maxnonants)
+
 if __name__=="__main__":
-    "ToDo: use messg instead of print?"
+    "ToDo: use messg instead of print? TEST CUTS"
 
     fnm = "e13"
 
@@ -273,4 +351,20 @@ if __name__=="__main__":
     print "Is ac with support closed?", la.isclosed(str2node("a c / 7777"))
     print "Is ab with support and noise closed?", la.isclosed(str2node("a b(  (  ( /   3456)"))
 
-    
+    (y,n) = la._cut(la.close(set2node("a")),int(0.1*la.scale))
+    print "cutting at threshold", 0.1
+    print "pos cut at a:", y
+    print "neg cut at a:", n
+
+    print "cutting all nodes now at threshold", 0.75
+    for nd in la.closeds:
+        print
+        print "At:", nd
+        print "  mxs:", nd.mxs, "mns:", nd.mns
+        (y,n) = la._cut(nd,int(0.75*la.scale))
+        print "pos cut:",
+        for st in y: print st,
+        print
+        print "neg cut:",
+        for st in n: print st,
+        print
