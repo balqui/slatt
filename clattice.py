@@ -150,6 +150,7 @@ class clattice:
             if self.mustsort:
                 self.v.messg("sorting...")
                 self.closeds.sort()
+                self.mustsort = False
             self.v.messg(str(self.card)+" closures found;") 
             self.v.messg("max support is "+str(self.maxsupp))
             self.v.messg("and effective absolute support threshold is "+str(self.minsupp)+
