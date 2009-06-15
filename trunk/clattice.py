@@ -88,7 +88,7 @@ class clattice:
         else:
           try:
             dataset = file("%s.txt" % datasetfile)
-            self.v.zero(250)
+            self.v.zero(2500)
             self.v.messg("from file "+datasetfile+".txt... computing some parameters...")
             self.nrocc = 0
             self.nrtr = 0
