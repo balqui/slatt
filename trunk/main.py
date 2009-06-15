@@ -38,7 +38,7 @@ dd = make_dict()
 ## FINALLY, SPECIFY WHICH TASKS TO BE PERFORMED - RECOMMEND: compute but do not
 ## print before knowing how big the printout is
 
-filename = "..\data\Sligro_data_EHV.data"
+filename = "..\data\sligro2"
 
 ## support and confidence to be given also here in the range [0,1]
 ## blocking factor threshold expected here as well, range [1,2] recommended
