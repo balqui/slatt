@@ -1,6 +1,6 @@
 #! /usr/bin/python
 
-##datasetfile = "cmc_eindh4"
+datasetfile = "../data/Sligro_data_EHV.data"
 
 if datasetfile == None:
     datasetfile = raw_input("Dataset File Name? ")

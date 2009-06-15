@@ -4,7 +4,22 @@ from brulattice import brulattice
 from slarule import slarule, printrules
 
 ## cmc-specific recoding:
-from trNS import tradNS
+#from trNS import tradNS
+
+def make_dict():
+    f = open("../data/artikqpf_raw.txt","r")
+
+    d=dict()
+    n=0
+    for line in f:
+        t=line.split(",")
+
+        d[t[0].strip('. ')]=t[1].strip('" \t.\n'+chr(10))
+        n+=1
+
+    f.close()
+
+    return d
 
 def blocked(an,cn,dic,blck):
     "auxiliary function: whether some rule in dic blocks an->cn at that factor"
@@ -15,21 +30,23 @@ def blocked(an,cn,dic,blck):
             if an2 < an and cn - an <= cn2 and r1.conf() <= blck*r2.conf():
                 return True
     return False
-            
+
+dd = make_dict()
+
 ## SPECIFY HERE THE FILENAME FOR THE DATASET, EXTENSION .txt WILL BE ASSUMED
 ## SPECIFY AS WELL PARAMETERS: support, confidence, blocking factor threshold
 ## FINALLY, SPECIFY WHICH TASKS TO BE PERFORMED - RECOMMEND: compute but do not
 ## print before knowing how big the printout is
 
-filename = "cmc_eindh4"
+filename = "..\data\Sligro_data_EHV.data"
 
 ## support and confidence to be given also here in the range [0,1]
 ## blocking factor threshold expected here as well, range [1,2] recommended
 ## can be computed through squint via program hints.py
 
-supp = 77.0/1473
-conf = 0.95
-blck = 1.05
+supp = 0.001
+conf = 0.8
+blck = 1.4
 ##supp = 540.0/1473
 ##conf = 0.65
 
@@ -41,7 +58,7 @@ blck = 1.05
 
 compute_B_star_rules = True
 
-print_nonblocked = False
+print_nonblocked = True
 
 compute_repr_rules = False
 
@@ -57,7 +74,7 @@ if compute_B_star_rules:
 
 ##    print printrules(BSants,rl1.nrtr,file(rlfile,"w"),tradNS), "B* rules found at supp %2.3f%% and conf %2.3f%%." % (100.0*supp,100.0*conf)
 
-    print printrules(BSants,rl1.nrtr,file(rlfile,"w")), "B* rules found at supp %2.3f%% and conf %2.3f%%." % (100.0*supp,100.0*conf)
+    print printrules(BSants,rl1.nrtr,file(rlfile,"w"),dd), "B* rules found at supp %2.3f%% and conf %2.3f%%." % (100.0*supp,100.0*conf)
 
 ##    print printrules(BSants,rl1.nrtr), "B* rules found at supp %2.3f%% and conf %2.3f%%." % (100.0*supp,100.0*conf)
 
@@ -71,7 +88,7 @@ if compute_B_star_rules:
     print cnt, "B* rules not blocked at threshold", blck
     
     if print_nonblocked:
-        whichrules = [ slarule(a,c).outstr(rl1.nrtr) for (a,c) in nonblocked ]
+        whichrules = [ slarule(a,c).outstr(rl1.nrtr,dd) for (a,c) in nonblocked ]
         for sr in sorted(whichrules,reverse=True):
             print sr 
         
@@ -88,9 +105,9 @@ if compute_repr_rules:
 
     rl2.findGDgens()
 
-    print printrules(rl2.GDgens,rl2.nrtr,file(gdfile,"w")), "GD rules found at supp %2.3f%%." % (100.0*supp)
+    print printrules(rl2.GDgens,rl2.nrtr,file(gdfile,"w"),dd), "GD rules found at supp %2.3f%%." % (100.0*supp)
 
-    print printrules(RRants,rl2.nrtr,file(rlfile,"w")), "RR rules found at supp %2.3f%% and conf %2.3f%%." % (100.0*supp,100.0*conf)
+    print printrules(RRants,rl2.nrtr,file(rlfile,"w"),dd), "RR rules found at supp %2.3f%% and conf %2.3f%%." % (100.0*supp,100.0*conf)
 
     cnt = 0
     nonblocked = []
@@ -102,7 +119,7 @@ if compute_repr_rules:
     print cnt, "RR rules not blocked at threshold", blck
     
     if print_nonblocked:
-        whichrules = [ slarule(a,c).outstr(rl1.nrtr) for (a,c) in nonblocked ]
+        whichrules = [ slarule(a,c).outstr(rl1.nrtr,dd) for (a,c) in nonblocked ]
         for sr in sorted(whichrules,reverse=True):
             print sr 
 

@@ -117,7 +117,7 @@ class clattice:
                 "ToDo: make this case work - maybe try uncommenting the next line"
 ##                call(cmmnd,shell=True)
                 self.v.errmessg("Platform "+system()+" not handled yet, sorry")
-            elif system()=="Windows":
+            elif system()=="Windows" or system()=="Microsoft":
                 self.v.messg("platform appears to be "+system()+";")
                 self.v.messg("computing closures by: \n        "+cmmnd+"\n")
                 call(cmmnd)
@@ -247,7 +247,7 @@ class clattice:
             e = over[0]
         else:
             "CAREFUL: what if st is not included in self.U?"
-            e = itset(self.U)
+            e = set2node(self.U)
         for e1 in over:
             if e1 < e:
                 e = e1
@@ -336,7 +336,7 @@ class clattice:
 if __name__=="__main__":
     "ToDo: use messg instead of print? TEST CUTS"
 
-    fnm = "e13"
+    fnm = "../data/Sligro_data_EHV.test.data"
 
     la = clattice(0,fnm)
 
@@ -344,27 +344,27 @@ if __name__=="__main__":
 
     print "\nLattice read in:"
     print la
-    print "Closure of ac:", la.close(set2node(auxitset("a c")))
-    print "Closure of ab:", la.close(str2node("a b"))
-    print "Is ac closed?", la.isclosed(str2node("a c"))
-    print "Is ab closed?", la.isclosed(str2node("a b"))
-    print "Is ac with support closed?", la.isclosed(str2node("a c / 7777"))
-    print "Is ab with support and noise closed?", la.isclosed(str2node("a b(  (  ( /   3456)"))
-
-    (y,n) = la._cut(la.close(set2node("a")),int(0.1*la.scale))
-    print "cutting at threshold", 0.1
-    print "pos cut at a:", y
-    print "neg cut at a:", n
-
-    print "cutting all nodes now at threshold", 0.75
-    for nd in la.closeds:
-        print
-        print "At:", nd
-        print "  mxs:", nd.mxs, "mns:", nd.mns
-        (y,n) = la._cut(nd,int(0.75*la.scale))
-        print "pos cut:",
-        for st in y: print st,
-        print
-        print "neg cut:",
-        for st in n: print st,
-        print
+##    print "Closure of ac:", la.close(set2node(auxitset("a c")))
+##    print "Closure of ab:", la.close(str2node("a b"))
+##    print "Is ac closed?", la.isclosed(str2node("a c"))
+##    print "Is ab closed?", la.isclosed(str2node("a b"))
+##    print "Is ac with support closed?", la.isclosed(str2node("a c / 7777"))
+##    print "Is ab with support and noise closed?", la.isclosed(str2node("a b(  (  ( /   3456)"))
+##
+##    (y,n) = la._cut(la.close(set2node("a")),int(0.1*la.scale))
+##    print "cutting at threshold", 0.1
+##    print "pos cut at a:", y
+##    print "neg cut at a:", n
+##
+##    print "cutting all nodes now at threshold", 0.75
+##    for nd in la.closeds:
+##        print
+##        print "At:", nd
+##        print "  mxs:", nd.mxs, "mns:", nd.mns
+##        (y,n) = la._cut(nd,int(0.75*la.scale))
+##        print "pos cut:",
+##        for st in y: print st,
+##        print
+##        print "neg cut:",
+##        for st in n: print st,
+##        print
