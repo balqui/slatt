@@ -123,7 +123,6 @@ def printrules(dic,nrtr,outfile=None,trad={},reflex=False):
         trad, dict mapping item translations
         reflex at True forces to write rules with empty rhs
         """
-        print "TRAD HAS SIZE", len(trad)
         cnt = 0
         for cn in dic.keys():
             for an in dic[cn]:
