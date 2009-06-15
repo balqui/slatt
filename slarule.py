@@ -96,18 +96,19 @@ class slarule:
     def __str__(self,trad={}):
         s = ""
         for el in sorted(self.an):
-            if el in trad.keys(): el = trad[el]
+            "rest of element is item class and promotion code"
+            if el.split('.')[0] in trad.keys(): el = trad[el.split('.')[0]]+el.split('.')[2]
             s += el + " "
         s += "=>"
         for el in sorted(self.cn):
             if not el in self.an:
-                if el in trad.keys(): el = trad[el]
+                if el.split('.')[0] in trad.keys(): el = trad[el.split('.')[0]]+el.split('.')[2]
                 s += " " + el
         return s
 
     def outstr(self,nrtr,trad={}):
         "extended version of __str__ with conf, supp, and width"
-        out = "[ w: " + ("%3.3f" % self.width(nrtr)) 
+        out = "[ w: " + ("%03.3f" % self.width(nrtr)) 
         out += "  c: " + ("%3.3f" % self.conf())
         out += "  s: " + ("%3.3f%%" % (100.0*self.supp(nrtr))) + " ]  "
         out += self.__str__(trad)
@@ -122,6 +123,7 @@ def printrules(dic,nrtr,outfile=None,trad={},reflex=False):
         trad, dict mapping item translations
         reflex at True forces to write rules with empty rhs
         """
+        print "TRAD HAS SIZE", len(trad)
         cnt = 0
         for cn in dic.keys():
             for an in dic[cn]:
