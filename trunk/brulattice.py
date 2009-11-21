@@ -45,7 +45,6 @@ class brulattice(clattice):
             print "and confidence", (e[1]+0.0)/self.scale
             print self.hist_Bstar[e]
 
-
     def mineBstar(self,suppthr,confthr,forget=False):
         """
         compute the Bstar basis for the given confidence;
@@ -130,7 +129,7 @@ if __name__ == "__main__":
 
     from slarule import printrules
 
-    from trNS import tradNS
+#    from trNS import tradNS
 
 ##    forget = True
     forget = False
@@ -142,7 +141,7 @@ if __name__ == "__main__":
     filename = "e13"
     supp = 1.0/13
 
-    rl = brulattice(supp,filename)
+    rl = brulattice(supp,filename+".txt")
     
 ##    print printrules(rl.mingens,rl.nrtr,file(filename+"_IFrl70s.txt","w")), "rules in the iteration free basis."
 ##

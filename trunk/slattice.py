@@ -57,7 +57,7 @@ class slattice(clattice):
         "get the closures, find minimal generators, set their mns"
         clattice.__init__(self,supp,datasetfile,v)
         self.mingens = corr()
-        self.GDgens = corr()
+        self.GDgens = None # upon computing it, will be a corr()
         self.hist_cuts = {}
         self.hist_trnsl = {}
         self.findmingens()
@@ -86,16 +86,6 @@ class slattice(clattice):
                 continue
             return m
         return None
-
-##    def _findinmingens(self,st):  OOLLLDDDD
-##        "must be a set that appears in mingen as itset with extra info - WHAT IF NOT FOUND?"
-##        for m in self.mingens:
-##            if m <= st and st <= m:
-##                break
-##        else:
-##            self.v.errmessg("Set "+str(st)+" expected in list of free sets but not found there.")
-##            return None
-##        return m
 
     def findmingens(self,suppthr=-1):
         """
@@ -146,6 +136,8 @@ class slattice(clattice):
         check sthr in self.hist_GD.keys() before computing it
         when other supports handled, remember to memorize computed ones
         """
+        if self.GDgens: return
+        self.GDgens = corr()
         if True:
             sthr = self.scale*self.minsupp/self.nrtr
 ##        if sthr in self.hist_GD.keys():
@@ -202,8 +194,12 @@ if __name__ == "__main__":
     from slanode import str2node
     
 ## CHOOSE A DATASET:
+    filename = "e13.txt"
+
+#    filename = "lenses_recoded.txt"
+    supp = 1.0/13
+
 ##    filename = "pumsb_star"
-    filename = "e13"
 ##    filename = "mvotes"
 ##    filename = "toyGD"
 ##    filename = "cmc_eindh4"
@@ -217,19 +213,19 @@ if __name__ == "__main__":
 # one-tenth percent (not recommended):
 ##    supp = 0.001
 # other figures (recommended for toys e13 and toyGD):
-    supp = 1.0/13
+#    supp = 1.0/13
 ##    supp = 0
 ##    supp = 70.0/1473
 
 ## CHOOSE WHAT TO SEE (recommended: see lattice only on toys):
 
-    see_whole_lattice = False
+    see_whole_lattice = True
     
 ## (recommended: first, just count them; see them only after you know how big they are)
-    see_it_free_basis = False
+    see_it_free_basis = True
     count_it_free_basis = True
 
-    see_GD_basis = False
+    see_GD_basis = True
     count_GD_basis = True
 
 
@@ -275,3 +271,4 @@ if __name__ == "__main__":
 
     print "ALSO!", la._findinmingens(la.closeds[6],str2node("a b"))
     
+

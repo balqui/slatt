@@ -21,11 +21,10 @@ Offers:
 ToDo:
 .URGENT: THINK ABOUT mns AND mxs FOR EXTREME CASES SUCH AS EMPTYSET OR BOTTOM OR TOPS OR...
 .handle the call to Borgelt's apriori on Linux
-.avoid calling Borgelt's apriori if closures file already available
 .rethink the scale, now 100000 means three decimal places for percentages
 .be able to load only a part of the closures in the available file if desired support is higher than in the file
 .review the ticking rates
-..for instance: if mxs zero, option is conservative estimate minsupp-1
+.if mxs zero, option is conservative estimate minsupp-1
 .is it possible to save time somehow using immpreds to compute mxn/mns?
 .should become a set of closures? 
 """
@@ -62,7 +61,7 @@ class clattice:
     Verbosity v own or received at init
     """
 
-    def __init__(self,supp,datasetfile="",v=None):
+    def __init__(self,supp,datasetfilename="",v=None):
         "float supp in [0,1] - read from clos file or create it from dataset"
         if v==None:
             self.v = verbosity()
@@ -74,7 +73,7 @@ class clattice:
         self.hist_cuts = {}
         self.mustsort = False
         self.v.inimessg("Initializing lattice") 
-        if datasetfile == "":
+        if datasetfilename == "":
             self.v.messg(" with just a bottom empty closure.")
             self.nrocc = 0
             self.nrtr = 0
@@ -86,14 +85,15 @@ class clattice:
             self.preds = {}
             self.addempty(0)
         else:
-          try:
-            dataset = file("%s.txt" % datasetfile)
+#          try:
+            "MUST MOVE OFF HERE THE PARAMETER COMPUTATION"
+            datasetfile = file("%s" % datasetfilename)
             self.v.zero(2500)
-            self.v.messg("from file "+datasetfile+".txt... computing some parameters...")
+            self.v.messg("from file "+datasetfilename+"... computing some parameters...")
             self.nrocc = 0
             self.nrtr = 0
             uset = set([])
-            for line in dataset:
+            for line in datasetfile:
                 self.v.tick()
                 self.nrtr += 1
                 for el in line.strip().split():
@@ -107,10 +107,11 @@ class clattice:
             else:
                 "there remains a scale issue to look at in the clfile name"
                 self.supp_percent = self.topercent(supp)
-            clfile = "%s_cl%2.3fs.txt" % (datasetfile,self.supp_percent)
-            suchfiles = glob(datasetfile+"_cl*s.txt")
-            cmmnd = ('./apriori.exe -tc -l1 -u0 -v" /%%a" -s%2.3f %s.txt ' % (self.supp_percent,datasetfile)) + clfile
-            if clfile in suchfiles:
+            clfilename = "%s_cl%2.3fs.txt" % (datasetfilename,self.supp_percent)
+            suchfiles = glob(datasetfilename+"_cl*s.txt")
+            # CAREFUL NOW ABOUT THE ; CHARACTER, MAYBE USE / (NEED TO BE CONSISTENT IN SLANODE)
+            cmmnd = ('./apriori.exe -tc -l1 -u0 -v" /%%a" -s%2.3f %s ' % (self.supp_percent,datasetfilename)) + clfilename
+            if clfilename in suchfiles:
                 "avoid calling apriori if closures file already available"
                 pass
             elif system()=="Linux":
@@ -134,7 +135,7 @@ class clattice:
             self.minsupp = self.nrtr+1
             self.preds = {}
             self.v.zero(250)
-            for line in file(clfile):
+            for line in file(clfilename):
                 "ToDo: maybe the file has lower support than desired and we do not want all closures there"
                 self.v.tick()
                 newnode = self.newclosure(line)
@@ -156,9 +157,9 @@ class clattice:
             self.v.messg("and effective absolute support threshold is "+str(self.minsupp)+
                       (", equivalent to %2.3f" % (float(self.minsupp*100)/self.nrtr)) +
                          "% of " + str(self.nrtr) + " transactions.")
-          except:
-            "ToDo: refine, now the catch-all makes debugging difficult"
-            self.v.errmessg("Please check file " + datasetfile + ".txt is there, platform is handled, and everything else.")
+#          except:
+#            "ToDo: refine, now the catch-all makes debugging difficult"
+#            self.v.errmessg("Please check file " + datasetfilename + " is there, platform is handled, and everything else.")
 
     def newclosure(self,st):
         """
@@ -337,11 +338,11 @@ class clattice:
 if __name__=="__main__":
     "ToDo: use messg instead of print? TEST CUTS"
 
-    fnm = "../data/Sligro_data_EHV.test.data"
+    fnm = "lenses_recoded.txt"
 
     la = clattice(0,fnm)
 
-    la.v.inimessg("Module clattice running as test on file "+fnm+".txt.")
+    la.v.inimessg("Module clattice running as test on file "+fnm)
 
     print "\nLattice read in:"
     print la

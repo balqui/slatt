@@ -8,13 +8,13 @@ Programmers: JLB
 Inherits from slattice, which brings cuts, mingens, and GDgens
 
 Offers:
-.hist_RR, hist_KrRR, hist_BCRR:  dict mapping each supp/conf thresholds tried
+.hist_RR:  dict mapping each supp/conf thresholds tried
   to the repr rules basis constructed according to that method
 .mineRR to compute the representative rules for a given confidence using
   corr tightening of transversals of the negative cuts
 SOON
-.mineKrRR to compute a subset of representative rules by Kryszkiewicz heuristic
-.mineBCRR to compute a representative rules by our method
+.mineKrRR to compute a subset of representative rules by Kryszkiewicz heuristic, hist_KrRR
+.mineBCRR to compute a representative rules by our method, hist_BCRR
 
 .CAREFUL: method mineBstar to compute the B* basis from positive cuts
   via corr tightening NOT here for the time being (guess only needs clattice,
@@ -55,6 +55,7 @@ class rerulattice(slattice):
             print "and confidence", (e[1]+0.0)/self.scale
             print self.hist_RR[e]
 
+## OPEN THIS UP WHEN THE Kr HEURISTIC MINING IS READY
 ##    def dump_hist_KrRR(self):
 ##        "prints out all the bases computed so far"
 ##        for e in self.hist_KrRR.keys():
@@ -67,12 +68,11 @@ class rerulattice(slattice):
         compute the representative rules for the given confidence;
         will provide the iteration-free basis if called with conf 1
         thresholds expected in [0,1] to rescale here
-        URGENT: THE SUPPORT CHECK DOES NOT WORK, MAYBE MINSUPP
-        ACTUALLY MUCH HIGHER THAN MINED AT
         """
         if confthr == 1:
             return self.mingens(suppthr)
         sthr = int(self.scale*suppthr)
+# PENDING: EXTRA CHECK THAT THE SUPPORT IN THE CL FILE IS SUFFICIENT - THIS ONE IS NOT REALLY GOOD
 #        if sthr < self.scale*self.cl.minsupp/self.cl.nrtr:
 #            self.v.errmessg("Support "+str(suppthr)+" not available.")
 #            return None
@@ -101,7 +101,6 @@ class rerulattice(slattice):
                     if m < nod:
                         mm = self._findinmingens(nod,m)
                         if mm==None: print m, "not found at", nod
-##                        mm.clos = nod
                         ants[nod].append(mm)
         self.v.zero(500)
         self.v.messg("...checking valid antecedents...")
@@ -109,16 +108,11 @@ class rerulattice(slattice):
         self.v.messg("...done.\n")
         return ants
 
-#######################
-
-    
 ##    def mineKrRR(self,suppthr,confthr,forget=False):
 ##        """
 ##        ditto, just that here we use the incomplete Krysz IDA 2001 heuristic
 ##        must ensure that mineW and setmns have been called
 ##        seems that this version does not find empty antecedents
-##        URGENT: THE SUPPORT CHECK DOES NOT WORK, MAYBE MINSUPP
-##        ACTUALLY MUCH HIGHER THAN MINED AT
 ##        """
 ##        sthr = int(self.scale*suppthr)
 ###        if sthr < self.scale*self.cl.minsupp/self.cl.nrtr:
@@ -153,7 +147,8 @@ class rerulattice(slattice):
 ##        if not forget: self.hist_KrRR[sthr,cthr] = out
 ##        self.v.messg("...done; "+str(out.nrimpls)+" rules found.\n")
 ##        return out
-##                
+
+## OLD THINGS JUST IN CASE
 ####        self.v.messg("computing potential antecedents at confidence "+str(confthr)+"...")
 ##
 ####            if self.scale*nod.supp >= sthr*self.cl.nrtr:
@@ -178,7 +173,7 @@ if __name__ == "__main__":
 
     from slarule import printrules
 
-    from trNS import tradNS
+#    from trNS import tradNS
 
 ##    forget = True
     forget = False
@@ -190,13 +185,13 @@ if __name__ == "__main__":
     filename = "e13"
     supp = 1.0/13
 
-    rl = rerulattice(supp,filename)
+    rl = rerulattice(supp,filename+".txt")
     
     print printrules(rl.mingens,rl.nrtr,file(filename+"_IFrl30s.txt","w")), "rules in the iteration free basis."
 
     rl.findGDgens()
 
-    print printrules(rl.GDgens,rl.nrtr,file(filename+"_GDrl30s.txt","w"),tradNS), "rules in the GD basis."
+#    print printrules(rl.GDgens,rl.nrtr,file(filename+"_GDrl30s.txt","w"),tradNS), "rules in the GD basis."
 
     RRants = rl.mineRR(supp,0.95)
 
