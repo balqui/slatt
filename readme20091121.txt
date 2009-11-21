@@ -8,7 +8,8 @@ on XP and cygwin, should be easy to port to Linux but not yet done.
 What: API to play with closure lattices and their generators; 
 main application is the computation of bases of association rules: 
 GD basis of implications, Representative Rules basis for rules, 
-B* basis for partial rules.
+B* basis for partial rules. It implements an additional recently
+developed threshold: confidence boost.
 
 HowTo: ToDo; but in the meantime look at main.py and how it uses 
 job.py; then do similar tasks, then look into job.py to see how 
@@ -24,6 +25,12 @@ Dataset filename: extension ".txt" is assumed throughout (see
 main.py for examples). The system will store in files starting
 with the same name various closure lattices and, if requested,
 resulting rule sets.
+
+Parameters: program hints.py will compute some values and suggest
+bold guesses for support bounds supposedly appropriate for various
+confidence levels; but these support thresholds might end up in 
+long times to mine all the closures. As of confidence boost, the
+suggested values are 1.05, 1.1, 1.15, and 1.20, for the time being.
 
 Rules: antecedent and consequent will be pretty obvious; they
 are written together with their width, confidence, and support.
