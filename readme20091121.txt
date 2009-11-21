@@ -1,0 +1,58 @@
+20091121: First ever public release of Slatt!
+
+Caveat: dataset is assumed not to contain the character '/'.
+
+What: API to play with closure lattices and their generators; 
+main application is the computation of bases of association rules: 
+GD basis of implications, Representative Rules basis for rules, 
+B* basis for partial rules.
+
+HowTo: ToDo; but in the meantime look at main.py and how it uses 
+job.py; then do similar tasks, then look into job.py to see how 
+it uses the API.
+
+Dataset: items are strings not containing the blank character, 
+the '/' character, nor whatever control characters your system 
+can get fooled with (bogus end of file, for instance). 
+Transactions are sets of items, separated by a blank character, 
+each transaction in a separate line.
+
+Dataset filename: extension ".txt" is assumed throughout (see
+main.py for examples). The system will store in files starting
+with the same name various closure lattices and, if requested,
+resulting rule sets.
+
+Rules: antecedent and consequent will be pretty obvious; they
+are written together with their width, confidence, and support.
+
+ToDo: infinitely many things. First few of these: review cboost
+for B*; manage to sort the output according to the confidence
+boost; review and hopefully remove all commented-out code;
+allow for the use of '/' in the data, at least by offering
+a choice of the separating character at lattice reading time;
+redesign the "verbosity" issue because it does not really 
+work well; reorganize the lattice classes so as to avoid the 
+second disk reading when the minimal generators are requested
+(clattice, slattice, brulattice, rerulattice, probably more); 
+take allsubsets out of cboost and find a good place for it; 
+recover the AFP interactive learner; replace the call to 
+the external apriori algorithm of Borgelt by our own closure 
+lattice miner; find out how to detect whether the supports 
+reached on the closure file are valid for more generous support 
+bounds; support integer coding to interface with programs that 
+require it; be faster at the correspondence tightening; be 
+faster at the hypergraph transversal computation (for instance 
+via Fredman-Khachiyan); manage to avoid the workarounds 
+circumventing the problem of initializing slanodes as 
+inheriting from frozenset; clarify who knows and who needs
+to know the number of transactions nrtr, and think carefully
+how to ensure it; several open questions in the clattice.py 
+file; consider removing all the computations of the width; 
+add alternative methods to compute and/or approximate the
+Representative Rules according to the incomplete heuristic 
+of Kryszkiewicz 2001 and according to the Balcazar-Casas
+complete but slower alternative; try to simplify printrules 
+and think about where it should live; add drawing capabilities
+of the Hasse diagrams of the lattices; invent how to visualize
+association rules; do I really want corrs for the rule sets?
+AND WRITE A USER MANUAL.
