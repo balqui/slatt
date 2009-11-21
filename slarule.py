@@ -114,7 +114,20 @@ class slarule:
         out += self.__str__(trad)
         return out
 
-def printrules(dic,nrtr,outfile=None,trad={},reflex=False):
+# ALTERNATIVE VERSION - MAYBE NEED ONE WITH CONF BOOST INSTEAD
+    def outstr2(self,nrtr,trad={}):
+        "extended version of __str__ with conf, supp, and possibly width - DO I NEED IT?"
+        nothing = ""
+        out = "["
+#        out += " w: " + ("%3.3f" % self.width(nrtr))
+        out += " c: " + ("%3.3f" % self.conf())
+        if self.supp(nrtr) < 0.1: nothing = " "
+        out += " s: " + nothing + ("%3.3f%%" % (100.0*self.supp(nrtr)))
+        out += " ] "
+        out += self.__str__(trad)
+        return out
+
+def printrules(dic,nrtr,outfile=None,trad={},reflex=False,confbound=0.0,doprint=True):
         """
         auxiliary method, outside the class!
         dic, a dict mapping consequents to antecedents
@@ -127,11 +140,14 @@ def printrules(dic,nrtr,outfile=None,trad={},reflex=False):
         for cn in dic.keys():
             for an in dic[cn]:
                 if an < cn or reflex:
-                    cnt += 1
                     r = slarule(an,cn)
-                    if not outfile: print r.outstr(nrtr,trad)
-                    else: outfile.write(r.outstr(nrtr,trad)+"\n")
+                    if r.conf() >= confbound:
+                        cnt += 1
+                        if doprint:
+                            if not outfile: print r.outstr(nrtr,trad)
+                            else: outfile.write(r.outstr(nrtr,trad)+"\n")
         return cnt
+
 
 if __name__=="__main__":
 

@@ -23,6 +23,7 @@ Offers:
 
 Notes:
 .supp is an integer, absolute support; dataset size needed to compute relative support
+.may want to use customized separator character to read the support from the apriori output ('/' or ';' or...)
 
 ToDo:
 .try Python 3.0 to inform the support upon __init__() and simplify (could then remove auxitset, set2node, str2node)
