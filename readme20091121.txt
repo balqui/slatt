@@ -1,6 +1,9 @@
-20091121: First ever public release of Slatt!
+20091121: First ever public release (0.2.0 alpha) of Slatt!
 
 Caveat: dataset is assumed not to contain the character '/'.
+
+Caveat: the external apriori call is to a Win32 binary; works
+on XP and cygwin, should be easy to port to Linux but not yet done.
 
 What: API to play with closure lattices and their generators; 
 main application is the computation of bases of association rules: 
