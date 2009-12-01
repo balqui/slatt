@@ -1,4 +1,4 @@
-20091121: First ever public release (0.2.0 alpha) of Slatt!
+20091121: First ever public download (0.2.0 alpha) of Slatt!
 
 Caveat: dataset is assumed not to contain the character '/'.
 
