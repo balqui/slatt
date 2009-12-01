@@ -106,7 +106,8 @@ class slarule:
                 s += " " + el
         return s
 
-    def outstr(self,nrtr,trad={}):
+# ORIGINAL ALTERNATIVE VERSION 
+    def outstr2(self,nrtr,trad={}):
         "extended version of __str__ with conf, supp, and width"
         out = "[ w: " + ("%03.3f" % self.width(nrtr)) 
         out += "  c: " + ("%3.3f" % self.conf())
@@ -114,11 +115,13 @@ class slarule:
         out += self.__str__(trad)
         return out
 
-# ALTERNATIVE VERSION - MAYBE NEED ONE WITH CONF BOOST INSTEAD
-    def outstr2(self,nrtr,trad={}):
-        "extended version of __str__ with conf, supp, and possibly width - DO I NEED IT?"
+# NO WIDTH, AND TRY TO FORMAT BETTER THE SUPPORT 
+# MAYBE NEED ONE WITH CONF BOOST INSTEAD
+    def outstr(self,nrtr,trad={}):
+        "extended version of __str__ with conf, supp"
         nothing = ""
         out = "["
+# TO SHOW HOW TO ADD OTHER PARAMETERS:
 #        out += " w: " + ("%3.3f" % self.width(nrtr))
         out += " c: " + ("%3.3f" % self.conf())
         if self.supp(nrtr) < 0.1: nothing = " "

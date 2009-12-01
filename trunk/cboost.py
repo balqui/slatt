@@ -33,16 +33,23 @@ class cboost:
                 conf1 = float(cn.supp)/an.supp
                 for cn2 in rrseconf.keys():
                     for an2 in rrseconf[cn2]:
-                        if cn.difference(an) <= cn2 and \
-                        (an2 < an or (an2==an and cn2!=cn)):
-                            totry = allsubsets(set(an.intersection(cn2.difference(an2))))
+                        if cn.difference(an) <= cn2 and an2 <= an:
+                            totry = allsubsets(set(an.difference(an2)))
                             for ss in totry:
                                 an3 = ss.union(an2)
-                                cn3 = an3.union(cn.difference(an))
-                                conf2 = float(clatt.close(cn3).supp)/clatt.close(an3).supp
-                                if conf1/conf2 <= boost:
-                                    goodsofar = False
-                                    break       # breaks for ss 
+                                if an3 < an:
+                                    cn3 = cn.difference(an).union(an3)
+                                    conf2 = float(clatt.close(cn3).supp)/clatt.close(an3).supp
+                                    if conf1 <= conf2*boost:
+                                        goodsofar = False
+                                        break   # breaks for ss and skips else
+                            else:
+                                for elem in cn2.difference(cn):
+                                    cn3 = set([elem]).union(cn)
+                                    conf2 = float(clatt.close(cn3).supp)/an.supp
+                                    if conf1 <= conf2*boost:
+                                        goodsofar = False
+                                        break   # breaks for elem
                         if not goodsofar: break # breaks for an2
                     if not goodsofar: break     # breaks for cn2
                 if goodsofar:
