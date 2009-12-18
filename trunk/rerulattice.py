@@ -70,7 +70,7 @@ class rerulattice(slattice):
         thresholds expected in [0,1] to rescale here
         """
         if confthr == 1:
-            return self.mingens(suppthr)
+            return self.findmingens(suppthr)
         sthr = int(self.scale*suppthr)
 # PENDING: EXTRA CHECK THAT THE SUPPORT IN THE CL FILE IS SUFFICIENT - THIS ONE IS NOT REALLY GOOD
 #        if sthr < self.scale*self.cl.minsupp/self.cl.nrtr:
