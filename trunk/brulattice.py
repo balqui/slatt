@@ -5,14 +5,12 @@ Subproject: Slatt
 Package: brulattice
 Programmers: JLB
 
-Inherits from slattice, which brings cuts, mingens, and GDgens
-
-But mingens not necessary except for GDgens, which may be again unnecessary
+Compute B* basis - inherits from clattice
 
 Offers:
 
 .hist_Bstar: dict mapping each supp/conf thresholds tried
-  to the repr rules basis constructed according to that method
+  to the B* rules basis constructed according to that method
 .mineBstar to compute the B* basis from positive cuts
   via corr tightening
 
@@ -21,10 +19,9 @@ Notes/ToDo:
 .note: sometimes the supp is lower than what minsupp indicates; this may be
 ..due to an inappropriate closures file, or due to the fact that indeed there
 ..are no closed sets in the dataset in between both supports (careful with
-..their different scales); set reliable_support_bound to true if you are
-..sure that the closures you are working with are correct
+..their different scales).
 
-ToDo:
+other ToDo:
 .revise and enlarge the local testing
 .revise ticking rates
 """
@@ -45,111 +42,112 @@ class brulattice(clattice):
             print "and confidence", (e[1]+0.0)/self.scale
             print self.hist_Bstar[e]
 
-    def mineBstar(self,suppthr,confthr,forget=False):
+    def mineBstar(self,suppthr,confthr,forget=False,cboobd=0):
         """
-        compute the Bstar basis for the given confidence;
+        compute the Bstar basis for the given confidence and, possibly,
+        conf boost; if present, use cboost bound to spare exploring some closures;
         thresholds in [0,1], rescaled into [0,self.x.scale] inside
         TODO: CHECK SUPPTHR COMPATIBLE WITH X.SUPPTHR
         NOW THIS IS BEING DONE ELSEWHERE BUT MAYBE SHOULD BE HERE
         """
         sthr = int(self.scale*suppthr)
         cthr = int(self.scale*confthr)
+        yesants = None
         if (sthr,cthr) in self.hist_Bstar.keys():
-            return self.hist_Bstar[sthr,cthr]
+            yesants = self.hist_Bstar[sthr,cthr]
+            if cboobd == 0: return yesants
         self.v.zero(100)
-        self.v.inimessg("Computing B* basis;")
-        yesants = self.setcuts(sthr,cthr,forget)[0]
-        self.v.messg("validating minimal antecedents at confidence "+str(confthr)+"...")
-        yesants.tighten(self.v)
+        self.v.inimessg("Computing B* basis at confidence "+str(confthr))
+        if cboobd != 0:
+            self.v.messg(" and confidence boost "+str(confthr))
+        if yesants is None:
+            yesants = self.setcuts(sthr,cthr,forget,skip,cboobd)[0]
+            self.v.messg("validating minimal antecedents...")
+            yesants.tighten(self.v)
         if not forget: self.hist_Bstar[sthr,cthr] = yesants
+        if cboobd > 0:
+            "filter according to boost bound"
+            filt = self.mineBstar(suppthr,confthr/cboobd,forget)
+            outcome = corr()
+            for cn in yesants:
+                "check if any antecedent leaves a rule to cn - BRUTE FORCE ALGORITHM"
+                outcome[cn] = []
+                for an in yesants[cn]:
+                    goodsofar = True
+                    conf1 = float(cn.supp)/an.supp
+                    for cn2 in filt:
+                        for an2 in filt[cn2]:
+                            if cn.difference(an) <= cn2 and an2 <= an:
+                                totry = allsubsets(set(an.difference(an2)))
+                                for ss in totry:
+                                    an3 = self.close(ss.union(an2))
+                                    if an3 < an:
+                                        cn3 = cn.difference(an).union(an3)
+                                        conf2 = float(self.close(cn3).supp)/an3.supp
+                                        if conf1 <= conf2*cboobd:
+                                            goodsofar = False
+                                            break   # breaks for ss and skips else
+                                else:
+                                    for elem in cn2.difference(cn):
+                                        cn3 = set([elem]).union(cn)
+                                        conf2 = float(self.close(cn3).supp)/an.supp
+                                        if conf1 <= conf2*cboobd:
+                                            goodsofar = False
+                                            break   # breaks for elem
+                            if not goodsofar: break # breaks for an2
+                        if not goodsofar: break     # breaks for cn2
+                    if goodsofar:
+                        outcome[cn].append(an)
+        else:
+            outcome = yesants
         self.v.messg("...done.\n")
-        return yesants
+        return outcome
 
 
-##    def mineBstar(self,suppthr,confthr,forget=False): OOOLLLLLDDDDD
-##        """
-##        compute the Bstar basis for the given confidence;
-##        thresholds in [0,1], rescaled into [0,self.x.scale] inside
-##        comments inherited from mineRR:
-##        TODO: CHECK SUPPTHR COMPATIBLE WITH X.SUPPTHR
-##        NOW THIS IS BEING DONE ELSEWHERE BUT MAYBE SHOULD BE HERE
-##        """
-##        sthr = int(self.scale*suppthr)
-##        cthr = int(self.scale*confthr)
-##        if (sthr,cthr) in self.hist_Bstar.keys():
-##            return self.hist_Bstar[sthr,cthr]
-##        self.v.zero(100)
-##        self.v.inimessg("Computing B* basis;")
-##        yesants = self._setcuts(sthr,cthr,forget)[0]
-##        self.v.messg("validating minimal antecedents at confidence "+str(confthr)+"...")
-##        yesants.tighten(self.v)
-##        out = implattice()
-##        out.nrtr = self.cl.nrtr
-##        self.v.zero()
-##        self.v.messg("...computing B* basis at confidence "+str(confthr)+"...")
-##        for nod in yesants.keys():
-##            "must check support additionally?"
-##            self.v.tick()
-##            for an in yesants[nod]:
-##                "is it guaranteed that an < nod?"
-##                out.newrule(slarule(an,nod))
-##        if not forget: self.hist_Bstar[sthr,cthr] = out
-##        self.v.messg("...done; "+str(out.nrimpls)+" rules found.\n")
-##        return out
-##
-####        for st in self.cl.closeds:
-####            "CHECK! this we do just for iceberg above suppth - IS THE SCALE RIGHT?"
-####            if st.supp>=sthr:
-####                self._validate(st)
-####        out = implattice()
-####        out.nrtr = self.cl.nrtr
-####        self.x.zero()
-####        self.x.messg("...computing B* basis at confidence "+str(confthr))
-####
-######        for st in self.cl.closeds: CHECK!
-####
-####            if st.supp>=suppth:
-####                for an in st.validants:
-####                    if an < st:
-####                        self.newimpl(an,st)
-####
-####
-####
-####    def _validate(self,n):
-####        "sift ants to leave only valid ones - all ants at whole lattice known"
-####        n.validants = []
-####        for g in n.ants:
-####            for c in self.cl.closeds:
-####                if n < c and g in c.ants:
-####                    break
-####            else:
-####                n.validants.append(g)
+def skip(nod,cb,scale):
+    "what nodes to skip at setcuts - need scale?"
+    return nod.supp <= cb * nod.mxs
+
+def allsubsets(givenset):
+    "construct powerset of aset, list of all subsets"
+    aset = givenset.copy()
+    for e in aset:
+        aset.remove(e)
+        p = allsubsets(aset)
+        q = []
+        for st in p:
+            s = st.copy()
+            s.add(e)
+            q.append(s)
+        return p+q
+    return [ set([]) ]
 
 if __name__ == "__main__":
 
     from slarule import printrules
 
-#    from trNS import tradNS
-
 ##    forget = True
     forget = False
 
 ##    filename = "pumsb_star"
-##    filename = "cmc_eindh4"
-##    supp = 70.0/1473
+##    supp = 0.4
 
     filename = "e13"
     supp = 1.0/13
 
     rl = brulattice(supp,filename+".txt")
     
-##    print printrules(rl.mingens,rl.nrtr,file(filename+"_IFrl70s.txt","w")), "rules in the iteration free basis."
-##
-##    rl.findGDgens()
-##
-##    print printrules(rl.GDgens,rl.nrtr,file(filename+"_GDrl70s.txt","w"),tradNS), "rules in the GD basis."
+##    rl.v.verb = False
 
-    BSants = rl.mineBstar(supp,0.83)
+    ccc = 0.7
+    cbb = 1.05
+    b = rl.mineBstar(supp,ccc,cboobd=cbb)
+    print "\n", printrules(b,rl.nrtr)
 
-    print printrules(BSants,rl.nrtr,file(filename+"_BS83c30s.txt","w")), "B* rules found at conf 0.83."
+    
+##    for ccc in [0.7,0.75,0.8]:
+##        for cbb in [1,1.05,1.1,1.15,1.2,1.25,1.3,1.35,1.4,1.45,1.5]:
+##            b = rl.mineBstar(supp,ccc,cboobd=cbb)
+##            print printrules(b,rl.nrtr,doprint=False), "B* rules found at conf", ccc, "boost", cbb
+    
 

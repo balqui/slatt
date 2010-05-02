@@ -8,7 +8,8 @@ Programmers: JLB
 Purpose: basic implication mining, that is, minimal generators and GD basis
 
 Inherits from clattice; use clattice when only closures are needed,
-and slattice when the minimal generators of each closure are also needed.
+like in brulattice, and slattice when the minimal generators of each
+closure are also needed, as in rerulattice.
 
 Fields: 
 .hist_trnsl: all transversals computed so far, so that they are not recomputed
@@ -18,7 +19,7 @@ Fields:
 
 Methods available:
 .findmingens: to compute the minimal generators of all closures via
-  transversals of immediate predecessors obtained as negative cuts,
+  transversals of immediate predecessors obtained as negative cuts
   (note that no tightening is necessary)
 .setmns to initialize the mns's of the free sets after mingens created
 .findGD to refine the iteration-free basis into the Guigues-Duquenne basis
@@ -104,11 +105,6 @@ class slattice(clattice):
         else:
             "ToDo: remove this assignment and do it the right way"
             sthr = int(self.scale*self.minsupp/self.nrtr)
-#            sthr = floor(self.scale*suppthr)
-#            if sthr < self.scale*self.minsupp/self.nrtr:
-# raise exception by returning None - BUT THIS PART DOES NOT REALLY WORK
-#                self.v.errmessg("[mineW] Support "+str(suppthr)+" not available.")
-#                return None
         if len(self.mingens)>0:
             return self.mingens
         self.v.inimessg("Computing cuts for minimal generators...")
@@ -140,8 +136,6 @@ class slattice(clattice):
         self.GDgens = corr()
         if True:
             sthr = self.scale*self.minsupp/self.nrtr
-##        if sthr in self.hist_GD.keys():
-##            return self.hist_GD[sthr]
         self.v.zero(250)
         self.v.inimessg("Filtering minimal generators to obtain the Guigues-Duquenne basis...")
         for c1 in self.closeds:
@@ -233,6 +227,8 @@ if __name__ == "__main__":
 
     la = slattice(supp,filename)
 
+    print "Test _findinmingens:", la._findinmingens(la.closeds[6],str2node("a b"))
+
     if see_whole_lattice: print la
 
     if count_it_free_basis or see_it_free_basis:
@@ -269,6 +265,5 @@ if __name__ == "__main__":
             print
             print cntGD, "rules in the Guigues-Duquenne basis"
 
-    print "ALSO!", la._findinmingens(la.closeds[6],str2node("a b"))
     
 
