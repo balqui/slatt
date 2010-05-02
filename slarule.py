@@ -106,23 +106,10 @@ class slarule:
                 s += " " + el
         return s
 
-# ORIGINAL ALTERNATIVE VERSION 
-    def outstr2(self,nrtr,trad={}):
-        "extended version of __str__ with conf, supp, and width"
-        out = "[ w: " + ("%03.3f" % self.width(nrtr)) 
-        out += "  c: " + ("%3.3f" % self.conf())
-        out += "  s: " + ("%3.3f%%" % (100.0*self.supp(nrtr))) + " ]  "
-        out += self.__str__(trad)
-        return out
-
-# NO WIDTH, AND TRY TO FORMAT BETTER THE SUPPORT 
-# MAYBE NEED ONE WITH CONF BOOST INSTEAD
     def outstr(self,nrtr,trad={}):
         "extended version of __str__ with conf, supp"
         nothing = ""
         out = "["
-# TO SHOW HOW TO ADD OTHER PARAMETERS:
-#        out += " w: " + ("%3.3f" % self.width(nrtr))
         out += " c: " + ("%3.3f" % self.conf())
         if self.supp(nrtr) < 0.1: nothing = " "
         out += " s: " + nothing + ("%3.3f%%" % (100.0*self.supp(nrtr)))
@@ -149,6 +136,8 @@ def printrules(dic,nrtr,outfile=None,trad={},reflex=False,confbound=0.0,doprint=
                         if doprint:
                             if not outfile: print r.outstr(nrtr,trad)
                             else: outfile.write(r.outstr(nrtr,trad)+"\n")
+# OPTION: NO SUPP/CONF VALUES:
+#                            else: outfile.write(str(r)+"\n")
         return cnt
 
 

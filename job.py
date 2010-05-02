@@ -33,7 +33,7 @@ class job:
                 self.brulatt = brulattice(self.supp,self.datasetfilename+".txt")
             self.brulatt.v.verb = verbose and self.verb
             latt = self.brulatt
-            rules = self.brulatt.mineBstar(self.supp,conf)
+            rules = self.brulatt.mineBstar(self.supp,conf,cboobd=boost) # careful here
             secondminer = self.brulatt.mineBstar
         elif basis == "RR":
             if self.rerulatt == None:
