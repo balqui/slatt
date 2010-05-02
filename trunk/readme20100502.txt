@@ -1,3 +1,32 @@
+20100502: 0.2.2 alpha with confidence boost support for B* rules
+
+1/ Bug: in 0.2.1, if RR requested with confidence 100% 
+(that is, the iteration-free basis) a call to "mingens" 
+instead of "findmingens" led to runtime error. Fixable 
+on 0.2.1 using revision 28 or later of rerulattice.py, 
+fixed in 0.2.2.
+
+2/ Confidence boost could be employed on B* rules although 
+it was programmed thinking of RR; the results were sometimes 
+slightly incorrect if used for B*. Reprogrammed for 0.2.2.
+
+3/ 0.2.1 contained quite an amount of dead code and several
+header doc strings were not up to date; also some of the 
+progress messages allowed some improvement. Revised for 
+0.2.2, including an incomplete heuristic for accelerating RR.
+
+4/ The other caveats still apply: dataset must not contain
+character "/", and getting the apriori call to the program
+of Christian Borgelt run on non-XP machines might be tricky.
+
+5/ Other todos: refactor cboost.py into rerulattice.py in a
+way similar to how it is handled in brulattice.py; refactor
+to avoid the duplicate lattice within job; reprogram all unit 
+testing in the appropriate way; add unit testing to slanode 
+and verbosity.
+
+
+
 20091201: Bugfix release 0.2.1 alpha: fix a couple of minor issues.
 
 1/ a technical question in the confidence boost filter
