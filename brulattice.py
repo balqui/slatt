@@ -1,5 +1,3 @@
-#! /usr/bin/python
-
 """
 Subproject: Slatt
 Package: brulattice
@@ -31,8 +29,8 @@ from clattice import clattice
 
 class brulattice(clattice):
 
-    def __init__(self,supp,datasetfile="",v=None):
-        clattice.__init__(self,supp,datasetfile,v)
+    def __init__(self,supp,datasetfile="",v=None,xmlinput=False,externalminer=True):
+        clattice.__init__(self,supp,datasetfile,v,xmlinput=xmlinput,externalminer=externalminer)
         self.hist_Bstar = {}
 
     def dump_hist_Bstar(self):
@@ -45,7 +43,8 @@ class brulattice(clattice):
     def mineBstar(self,suppthr,confthr,forget=False,cboobd=0):
         """
         compute the Bstar basis for the given confidence and, possibly,
-        conf boost; if present, use cboost bound to spare exploring some closures;
+        conf boost; if present, use cboost bound to spare exploring some
+        closures (but tgat might not work now);
         thresholds in [0,1], rescaled into [0,self.x.scale] inside
         TODO: CHECK SUPPTHR COMPATIBLE WITH X.SUPPTHR
         NOW THIS IS BEING DONE ELSEWHERE BUT MAYBE SHOULD BE HERE
@@ -59,7 +58,7 @@ class brulattice(clattice):
         self.v.zero(100)
         self.v.inimessg("Computing B* basis at confidence "+str(confthr))
         if cboobd != 0:
-            self.v.messg(" and confidence boost "+str(confthr))
+            self.v.messg(" and confidence boost "+str(cboobd))
         if yesants is None:
             yesants = self.setcuts(sthr,cthr,forget,skip,cboobd)[0]
             self.v.messg("validating minimal antecedents...")
@@ -100,13 +99,14 @@ class brulattice(clattice):
                         outcome[cn].append(an)
         else:
             outcome = yesants
-        self.v.messg("...done.\n")
         return outcome
 
 
 def skip(nod,cb,scale):
     "what nodes to skip at setcuts - need scale?"
     return nod.supp <= cb * nod.mxs
+
+## allsubsets is being moved s/w else - remove from here
 
 def allsubsets(givenset):
     "construct powerset of aset, list of all subsets"
@@ -135,7 +135,7 @@ if __name__ == "__main__":
     filename = "e13"
     supp = 1.0/13
 
-    rl = brulattice(supp,filename+".txt")
+    rl = brulattice(supp,filename)
     
 ##    rl.v.verb = False
 
