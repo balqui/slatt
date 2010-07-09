@@ -1,0 +1,148 @@
+
+20100709: 0.2.3 alpha with internal closure miner and XML 
+import/export facilities
+
+1/ Added functionality in representative rules by implementing
+the heuristic of Kryszkiewicz 2001 - part of a plan to implement
+other heuristics and compare.
+
+2/ Added a closure miner and options to write and read the
+output in XML files. Current default behavior is to try to 
+find the closed sets in an XML file; if not found, try to
+find them in an output file of the Borgelt apriori binary;
+if not found, try to run the Borgelt apriori binary; if not
+found, run the internal miner. In all cases, write off the
+result as an XML file. This behavior can be controlled by
+tuning the internal parameters xmlinput and use_external_miner.
+
+3/ Of course that part meant quite some refactoring of the
+base clattice class (but still not efficiently used in the 
+job class).
+
+4/ Revised docstrings.
+
+5/ Branched some code into a somewhat different brother project
+(ask JLB for more info if interested).
+
+
+
+20100502: 0.2.2 alpha with confidence boost support for B* rules
+
+1/ Bug: in 0.2.1, if RR requested with confidence 100% 
+(that is, the iteration-free basis) a call to "mingens" 
+instead of "findmingens" led to runtime error. Fixable 
+on 0.2.1 using revision 28 or later of rerulattice.py, 
+fixed in 0.2.2.
+
+2/ Confidence boost could be employed on B* rules although 
+it was programmed thinking of RR; the results were sometimes 
+slightly incorrect if used for B*. Reprogrammed for 0.2.2.
+
+3/ 0.2.1 contained quite an amount of dead code and several
+header doc strings were not up to date; also some of the 
+progress messages allowed some improvement. Revised for 
+0.2.2, including an incomplete heuristic for accelerating RR.
+
+4/ The other caveats still apply: dataset must not contain
+character "/", and getting the apriori call to the program
+of Christian Borgelt run on non-XP machines might be tricky.
+
+5/ Other todos: refactor cboost.py into rerulattice.py in a
+way similar to how it is handled in brulattice.py; refactor
+to avoid the duplicate lattice within job; reprogram all unit 
+testing in the appropriate way; add unit testing to slanode 
+and verbosity.
+
+
+
+20091201: Bugfix release 0.2.1 alpha: fix a couple of minor issues.
+
+1/ a technical question in the confidence boost filter
+
+2/ output of rules no longer outputs the puzzling confidence width
+
+3/ attempted to add support for Darwin on MAC (thanks Marta)
+
+Caveats: 
+
+a/ dataset is assumed not to contain the character '/';
+
+b/ header information in the source files is likely to be obsolete;
+
+c/ the external apriori call is to a Win32 binary -- works on XP and 
+cygwin, for Linux it may suffice to uncomment a couple of lines
+of code in clattice.py, and for Darwin it may suffice to copy
+the same two lines and adjusting them a bit (might not work though).
+
+Please read on.
+
+
+
+20091121: First ever public download (0.2.0 alpha) of Slatt!
+
+Caveat: dataset is assumed not to contain the character '/'.
+
+Caveat: the external apriori call is to a Win32 binary; works
+on XP and cygwin, should be easy to port to Linux but not yet done.
+
+What: API to play with closure lattices and their generators; 
+main application is the computation of bases of association rules: 
+GD basis of implications, Representative Rules basis for rules, 
+B* basis for partial rules. It implements an additional recently
+developed threshold: confidence boost.
+
+HowTo: ToDo; but in the meantime look at main.py and how it uses 
+job.py; then do similar tasks, then look into job.py to see how 
+it uses the API.
+
+Dataset: items are strings not containing the blank character, 
+the '/' character, nor whatever control characters your system 
+can get fooled with (bogus end of file, for instance). 
+Transactions are sets of items, separated by a blank character, 
+each transaction in a separate line.
+
+Dataset filename: extension ".txt" is assumed throughout (see
+main.py for examples). The system will store in files starting
+with the same name various closure lattices and, if requested,
+resulting rule sets.
+
+Parameters: program hints.py will compute some values and suggest
+bold guesses for support bounds supposedly appropriate for various
+confidence levels; but these support thresholds might end up in 
+long times to mine all the closures. As of confidence boost, the
+suggested values are 1.05, 1.1, 1.15, and 1.20, for the time being.
+
+Rules: antecedent and consequent will be pretty obvious; they
+are written together with their width, confidence, and support.
+
+ToDo: infinitely many things. First few of these: review cboost
+for B*; manage to sort the output according to the confidence
+boost; review and hopefully remove all commented-out code;
+allow for the use of '/' in the data, at least by offering
+a choice of the separating character at lattice reading time;
+redesign the "verbosity" issue because it does not really 
+work well; reorganize the lattice classes so as to avoid the 
+second disk reading when the minimal generators are requested
+(clattice, slattice, brulattice, rerulattice, probably more); 
+take allsubsets out of cboost and find a good place for it; 
+recover the AFP interactive learner; replace the call to 
+the external apriori algorithm of Borgelt by our own closure 
+lattice miner; find out how to detect whether the supports 
+reached on the closure file are valid for more generous support 
+bounds; support integer coding to interface with programs that 
+require it; be faster at the correspondence tightening; be 
+faster at the hypergraph transversal computation (for instance 
+via Fredman-Khachiyan); manage to avoid the workarounds 
+circumventing the problem of initializing slanodes as 
+inheriting from frozenset; clarify who knows and who needs
+to know the number of transactions nrtr, and think carefully
+how to ensure it; several open questions in the clattice.py 
+file; consider removing all the computations of the width; 
+add alternative methods to compute and/or approximate the
+Representative Rules according to the incomplete heuristic 
+of Kryszkiewicz 2001 and according to the Balcazar-Casas
+complete but slower alternative; try to simplify printrules 
+and think about where it should live; add drawing capabilities
+of the Hasse diagrams of the lattices; invent how to visualize
+association rules; do I really want corrs for the rule sets?
+AND WRITE A USER MANUAL.
