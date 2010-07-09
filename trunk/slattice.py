@@ -1,5 +1,3 @@
-#! /usr/bin/python
-
 """
 Project: Slatt
 Package: slattice
@@ -44,19 +42,11 @@ from slanode import set2node
 from hypergraph import hypergraph
 from corr import corr
 
-##from verbosity import verbosity
-##from itset import itset, itsetset, itsetstr
-##from slarule import slarule
-##from implattice import implattice
-
-#from math import floor
-
-
 class slattice(clattice):
 
-    def __init__(self,supp,datasetfile="",v=None):
+    def __init__(self,supp,datasetfile="",v=None,xmlinput=False,externalminer=True):
         "get the closures, find minimal generators, set their mns"
-        clattice.__init__(self,supp,datasetfile,v)
+        clattice.__init__(self,supp,datasetfile,v,xmlinput=xmlinput,externalminer=externalminer)
         self.mingens = corr()
         self.GDgens = None # upon computing it, will be a corr()
         self.hist_cuts = {}
@@ -188,10 +178,10 @@ if __name__ == "__main__":
     from slanode import str2node
     
 ## CHOOSE A DATASET:
-    filename = "e13.txt"
+    filename = "e13"
 
-#    filename = "lenses_recoded.txt"
-    supp = 1.0/13
+#    filename = "lenses_recoded"
+    supp = 1.0/14
 
 ##    filename = "pumsb_star"
 ##    filename = "mvotes"
@@ -200,14 +190,14 @@ if __name__ == "__main__":
     
 
 ## CHOOSE A SUPPORT CONSTRAINT:
-# forty percent (recommended for pumsb_star):
+## forty percent (recommended for pumsb_star):
 ##    supp = 0.4
-# twenty percent (recommended for mvotes):
+## twenty percent (recommended for mvotes):
 ##    supp = 0.2
-# one-tenth percent (not recommended):
+## one-tenth percent (not recommended):
 ##    supp = 0.001
-# other figures (recommended for toys e13 and toyGD):
-#    supp = 1.0/13
+## other figures (recommended for toys e13 and toyGD):
+##    supp = 1.0/13
 ##    supp = 0
 ##    supp = 70.0/1473
 
@@ -227,9 +217,9 @@ if __name__ == "__main__":
 
     la = slattice(supp,filename)
 
-    print "Test _findinmingens:", la._findinmingens(la.closeds[6],str2node("a b"))
-
     if see_whole_lattice: print la
+
+    print "Test _findinmingens:", la._findinmingens(la.closeds[6],str2node("a b"))
 
     if count_it_free_basis or see_it_free_basis:
 

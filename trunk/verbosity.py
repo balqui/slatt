@@ -64,4 +64,4 @@ class verbosity:
 if __name__=="__main__":
     pass
 
-#    print "slatt module verbosity called as main and running as test..."
+##    print "slatt module verbosity called as main and running as test..."

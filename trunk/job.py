@@ -7,8 +7,9 @@ class job:
 
     def __init__(self,datasetfilename,supp,verbose=True):
         """
+        duplicate lattice to be simplified (but first attempt failed)
         job consists of 
-          dataset file name, extension ".txt" assumed
+          dataset file name, extension ".txt" explicitly added
           support threshold in [0,1],
         """
         self.verb = verbose
@@ -29,29 +30,32 @@ class job:
         basis2 = basis
         if basis == "B*":
             basis2 = "Bstar" # for filenames
-            if self.brulatt == None:
-                self.brulatt = brulattice(self.supp,self.datasetfilename+".txt")
+            if self.brulatt is None:
+                self.brulatt = brulattice(self.supp,self.datasetfilename,xmlinput=True)
+            self.brulatt.xmlize()
             self.brulatt.v.verb = verbose and self.verb
             latt = self.brulatt
             rules = self.brulatt.mineBstar(self.supp,conf,cboobd=boost) # careful here
             secondminer = self.brulatt.mineBstar
         elif basis == "RR":
-            if self.rerulatt == None:
-                self.rerulatt = rerulattice(self.supp,self.datasetfilename+".txt")
+            if self.rerulatt is None:
+                self.rerulatt = rerulattice(self.supp,self.datasetfilename,xmlinput=True)
+            self.rerulatt.xmlize()
             self.rerulatt.v.verb = verbose and self.verb 
             latt = self.rerulatt
             rules = self.rerulatt.mineRR(self.supp,conf)
             secondminer = self.rerulatt.mineRR
         elif basis == "GD":
             conf = 1.0
-            if self.rerulatt == None:
-                self.rerulatt = rerulattice(self.supp,self.datasetfilename+".txt")
+            if self.rerulatt is None:
+                self.rerulatt = rerulattice(self.supp,self.datasetfilename)
             self.rerulatt.v.verb = verbose and self.verb 
             latt = self.rerulatt
             self.rerulatt.findGDgens(self.supp)
             rules = self.rerulatt.GDgens
             secondminer = self.rerulatt.mineRR
         else:
+            "a print because there may be no lattice and no verbosity - to correct soon"
             print "Basis unavailable; options: B*, RR, GD"
             return 0
         warn = ""

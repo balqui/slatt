@@ -2,6 +2,8 @@ from corr import corr
 from slarule import slarule
 from slanode import str2node
 
+## allsubsets is being moved s/w else - remove from here
+
 def allsubsets(givenset):
     "construct powerset of aset, list of all subsets"
     aset = givenset.copy()
@@ -64,7 +66,7 @@ if __name__=="__main__":
     filename = "e13"
     supp = 0.99/13 #was 24 but...
 
-    rl = rerulattice(supp,filename+".txt")
+    rl = rerulattice(supp,filename)
 
     print "Iteration-free basis:"
 

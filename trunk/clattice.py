@@ -1,7 +1,6 @@
-#! /usr/bin/python
 """
-Project: Slatt
-Package: clattice
+Project: slatt
+Package: clattice for 0.2.4 on top of our own closure miner
 Programmers: JLB
 
 Purpose: implement a lattice by lists of antecedents among closed itsets
@@ -9,240 +8,73 @@ Purpose: implement a lattice by lists of antecedents among closed itsets
 Offers:
 .hist_cuts: all cuts computed so far, so that they are not recomputed
 .dump_hist_cuts
-.init from dataset, but checks for existence of closure file to see if can spare the apriori call
 .computing closure op
 .to string method
-.scale: to use ints instead of floats for support/confidence bounds
-..and also for conf/width/block factor bounds in other classes
-..allows one to index already-computed bases or cuts
-..and also to handle the choices [0,1]-float versus percent-float transparently
+.scale in closminer serves to use ints instead of floats for
+  support/confidence/boost bounds, and allows us to index
+  already-computed bases or cuts - params moved there:
+  scale, univ, nrtr, nrits, nrocc, U (univ set), card (number of closures),
+  maximum and minimum supports seen (absolute integers),
+  supp_percent (float in [0,100] actually used for the mining)
 
 ToDo:
+.check whether the skipping of closures in computing cuts works at all
 .refactor the handling of omitted nodes in setcuts:
   the conf boost (upper width) bound and the variants of Kr Property 9
   should be treated in the same manner
 .raise a more appropriate exception if platform not handled
-.check mns and mxs for extreme cases
-.handle the call to Borgelt's apriori on Linux
+.recover the handling of mns/mxs and check their use in extreme cases
+.if mxs zero, option is conservative estimate minsupp-1
+.is it possible to save time somehow using immpreds to compute mxn/mns?
 .rethink the scale, now 100000 means three decimal places for percentages
 .be able to load only a part of the closures in the available file if desired support is higher than in the file
 .review the ticking rates
-.if mxs zero, option is conservative estimate minsupp-1
-.is it possible to save time somehow using immpreds to compute mxn/mns?
 .should become a set of closures? 
 """
 
+from closminer import closminer
+
 from verbosity import verbosity
-from slanode import slanode, str2node, set2node, auxitset
-from subprocess import call
-from platform import system
-from glob import glob
-from math import floor
 from corr import corr
+from collections import defaultdict
 
-class clattice:
+class clattice(closminer):
     """
-    Lattice implemented as explicit list of closures with lists of predecessors
-    Lists include all the predecessors (transitive closure)
-    Initialization is from Borgelt's apriori v5 output:
-      ./apriori.exe -tc -sSUPPORT -u0 -l1 -v" /%a" TRANSFILE.txt CLOSFILE.txt
-    Closures expected ordered in the list (option -l1)
-    CLOSFILE checked for existence under name TRANSFILE_clSUPPORTs.txt
-    where SUPPORT is the integer indicating existing minimum absolute support
-    Fields:
-    Scale to avoid floats in supp/conf/etc
-    Universe set U
-    Number of closures card
-    List of closures closeds
-    Dictionary of closed predecessors for each closure
-    Maximum and minimum supports seen (absolute integers)
-    supp_percent, float in [0,100] actually used for the mining
-    (may be strictly lower than minsupp actually seen)
-    Number of transactions in the original dataset nrtr
-    Number of different items in the original dataset nrits
-    Number of item occurrences in the original dataset nrocc
+    Lattice implemented as explicit list of closures (from closminer)
+    with a dict of closed predecessors for each closure (added here)
+    (all the predecessors - transitive closure)
     Verbosity v own or received at init
+    Closures expected ordered in the list
+    - option -l1 in Borgelts
+    - by decreasing supports o/w
     """
-    def __init__(self,supp,datasetfilename="",v=None):
+
+    def __init__(self,supp,datasetfilename,v=None,xmlinput=False,externalminer=True):
         "float supp in [0,1] - read from clos file or create it from dataset"
-        if v==None:
-            self.v = verbosity()
-        else:
-            self.v = v
-        self.U = set([])
-        self.scale = 100000
-        self.closeds = []
+        closminer.__init__(self,supp,datasetfilename,v,xmlinput=xmlinput,externalminer=externalminer)
         self.hist_cuts = {}
-        self.mustsort = False
-        self.v.inimessg("Initializing lattice") 
-        if datasetfilename == "":
-            self.v.messg(" with just a bottom empty closure.")
-            self.nrocc = 0
-            self.nrtr = 0
-            self.nrits = 0
-            self.supp_percent = 0.0
-            self.card = 0
-            self.maxsupp = 0
-            self.minsupp = 0
-            self.preds = {}
-            self.addempty(0)
-        else:
-#          try:
-            "MUST MOVE OFF HERE THE PARAMETER COMPUTATION"
-            datasetfile = file("%s" % datasetfilename)
-            self.v.zero(2500)
-            self.v.messg("from file "+datasetfilename+"... computing parameters...")
-            self.nrocc = 0
-            self.nrtr = 0
-            uset = set([])
-            for line in datasetfile:
+        self.preds = defaultdict(list)
+        for node in self.closeds:
+            """
+            set up preds and everything -
+            closures come in either nonincreasing support or nondecreasing size
+            hence all subsets of each closure come before it
+            """
+            node.mxs = 0
+            node.mns = self.nrtr
+            for e in self.closeds:
+                "list existing nodes potentially below, break at itself"
                 self.v.tick()
-                self.nrtr += 1
-                for el in line.strip().split():
-                    if len(el)>0:
-                        self.nrocc += 1
-                        uset.add(el)
-            self.nrits = len(uset)
-            if supp == 0:
-                "apriori implementation might not work with support zero"
-                self.supp_percent = 0.001
-            else:
-                "there remains a scale issue to look at in the clfile name"
-                self.supp_percent = self.topercent(supp)
-            clfilename = "%s_cl%2.3fs.txt" % (datasetfilename,self.supp_percent)
-            suchfiles = glob(datasetfilename+"_cl*s.txt")
-            # use / to separate itemset from support - check slanode is consistent
-            cmmnd = ('./apriori.exe -tc -l1 -u0 -v" /%%a" -s%2.3f %s ' % (self.supp_percent,datasetfilename)) + clfilename
-            if clfilename in suchfiles:
-                "avoid calling apriori if closures file already available"
-                pass
-            elif system()=="Darwin":
-                cmmnd = ('./aprioriD -tc -l1 -u0 -v" /%%a" -s%2.3f %s ' % (self.supp_percent,datasetfilename)) + clfilename
-                call(cmmnd,shell=True)
-            elif system()=="Linux":
-                "ToDo: make this case work"
-##                cmmnd = ('./aprioriL32 -tc -l1 -u0 -v" /%%a" -s%2.3f %s ' % (self.supp_percent,datasetfilename)) + clfilename
-##                call(cmmnd,shell=True)
-                self.v.errmessg("Platform "+system()+" not handled yet, sorry")
-            elif system()=="Windows" or system()=="Microsoft":
-                self.v.messg("platform appears to be "+system()+";")
-                self.v.messg("computing closures by: \n        "+cmmnd+"\n")
-                call(cmmnd)
-            elif system()=="CYGWIN_NT-5.1":
-                self.v.messg("platform appears to be "+system()+";")
-                self.v.messg("computing closures by: \n        "+cmmnd+"\n")
-                call(cmmnd,shell=True)
-            else:
-                "unhandled platform - hack: artificially raise exception"
-                self.v.errmessg("Platform "+system()+" not handled yet, sorry")
-                ff = file("NonexistentFileToRaiseAnExceptionDueToUnhandledSystem")
-            self.card = 0
-            self.maxsupp = 0
-            self.minsupp = self.nrtr+1
-            self.preds = {}
-            self.v.zero(250)
-            self.v.messg("...loading closures in...")
-            for line in file(clfilename):
-                "ToDo: maybe the file has lower support than desired and we do not want all closures there"
-                self.v.tick()
-                newnode = self.newclosure(line)
-                if newnode.supp > self.maxsupp:
-                    self.maxsupp = newnode.supp
-                if newnode.supp != 0 and newnode.supp < self.minsupp:
-                    self.minsupp = newnode.supp
-            self.v.messg("...done;")
-            if self.maxsupp < self.nrtr:
-                "no bottom itemset, common to all transactions - hence add emtpy"
-                self.addempty(self.nrtr)
-            else:
-                self.v.messg("bottom closure is nonempty;")
-            if self.mustsort:
-                self.v.messg("sorting...")
-                self.closeds.sort()
-                self.mustsort = False
-            self.v.messg(str(self.card)+" closures found.") 
-            self.v.inimessg("The max support is "+str(self.maxsupp))
-            self.v.messg("; the effective absolute support threshold is "+str(self.minsupp)+
-                      (", equivalent to %2.3f" % (float(self.minsupp*100)/self.nrtr)) +
-                         "% of " + str(self.nrtr) + " transactions.")
-#          except:
-#            "ToDo: program a decent exception"
-#            self.v.errmessg("Please check file " + datasetfilename + " is there, platform is handled, and everything else.")
-
-    def newclosure(self,st):
-        """
-        append new node from string st to self.closeds
-        return new node itself
-        initialize its mxs and mns according to nodes already existing
-        update mxs and mns values of predecessors and successors
-        update the lists of predecessors of its successors
-        """
-        node = str2node(st)
-        node.mxs = 0
-        node.mns = self.nrtr
-        above = []
-        below = []
-        for e in self.closeds:
-            "list existing nodes above and below, break if a duplicate is found"
-            if node < e:
-                "a superset found"
-                above.append(e)
-                if e.supp > node.mxs: node.mxs = e.supp
-            elif e < node:
-                "a subset found"
-                below.append(e)
-                if e.supp < node.mns: 
-                    node.mns = e.supp
-            elif e == node:
-                "repeated closure! don't return node, causes error in init"
-                self.v.errmessg("Itemset from "+str(st)+" duplicated.")
-                break
-        else:
-            "not found, correct nonduplicate node: add to closeds and to preds lists above"
-            self.closeds.append(node)
-            self.U.update(node)
-            self.card += 1
-            self.preds[node] = []
-            if len(above)>0:
-                "closures in file not in order"
-                self.v.errmessg("[Warning] Closure "+st+" is a predecessor of earlier nodes")
-                self.mustsort = True
-                if len(above)==1:
-                    self.v.messg("("+str(above[0])+")\n")
-            for e in above:
-                self.preds[e].append(node)
-                if e.mns > node.supp: e.mns = node.supp
-            for e in below:
-                self.preds[node].append(e)
-                if node.supp > e.mxs: e.mxs = node.supp
-            return node
-
-    def addempty(self,nrtr):
-        """
-        add emptyset as closure, with nrtr as support
-        (pushed into the front, not appended)
-        mns for emptyset nrtr for today, somewhat unclear
-        (kills down to 1 the width of empty-antecedent rules, maybe rightly so)
-        """
-        node = str2node()
-        node.setsupp(nrtr)
-        self.preds[node] = []
-        node.mns = nrtr
-        node.mxs = 0
-        for e in self.closeds:
-            self.preds[e].append(node)
-            if e.mns > node.supp: e.mns = node.supp
-            if e.supp > node.mxs: node.mxs= e.supp
-        self.card += 1
-        self.closeds.insert(0,node)
-
-    def topercent(self,anysupp):
-        """
-        anysupp expected in [0,1], eg a support bound
-        gets translated into percent and truncated according to scale
-        (e.g. for scale 100000 means three decimal places)
-        """
-        return 100.0*floor(self.scale*anysupp)/self.scale
+                if e < node:
+                    "a subset found"
+                    self.preds[node].append(e)
+                    if e.supp < node.mns: 
+                        node.mns = e.supp
+                    if node.supp > e.mxs:
+                        e.mxs = node.supp
+                elif e == node:
+                    "reached node"
+                    break
 
     def __str__(self):
         s = ""
@@ -293,6 +125,7 @@ class clattice:
         pos : node -> min ants,  neg : node -> max nonants
         wish to be able to use it for a support different from self.minsupp
         (unclear whether it works now in that case)
+        Things that probably do not work now:
         Bstar may require a support improvement wrt larger closures
         signaled by skip not None AND skippar (improv) not zero
         Kr/BC heuristics may require a conf-based check on nodes,
@@ -364,11 +197,26 @@ def never(n,s,t):
 if __name__=="__main__":
 ##    fnm = "lenses_recoded.txt"
 ##    but cuts testing assumes fnm e13
-    fnm = "e13.txt"
-    la = clattice(0,fnm)
+
+##    laa = clattice(0.003,"cestas20")
+
+##    exit(1)
+    
+    fnm = "e13"
+##    fnm = "exbordalg"
+##    fnm = "pumsb_star"
+    
+    la = clattice(0.65,fnm,externalminer = False) # , xmlinput=True)
     la.v.inimessg("Module clattice running as test on file "+fnm)
     la.v.inimessg("Lattice read in:\n")
     la.v.messg(str(la))
+
+    for a in la.closeds:
+        print a,
+        print "preds:"
+        for e in la.preds[a]: print e, ",",
+        print
+
 
     print "Closure of ac:", la.close(set2node(auxitset("a c")))
     print "Closure of ab:", la.close(str2node("a b"))
@@ -392,3 +240,5 @@ if __name__=="__main__":
         print "neg cut:",
         for st in n: print st,
         print
+
+
