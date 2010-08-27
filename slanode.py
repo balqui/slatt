@@ -74,6 +74,7 @@ class slanode(frozenset):
         self.card = len(contents)
         self.mxs = -1
         self.mns = -1
+        self.kmns = -1
         self.gmxs = -1
 
     def setsupp(self,supp):

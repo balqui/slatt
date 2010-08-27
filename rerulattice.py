@@ -13,11 +13,14 @@ Offers:
 .mineKrRR (ongoing) to compute a subset of representative rules
   by Kryszkiewicz heuristic,
 .hist_KrRR, corresponding dict
-.mineBCRR (planned) to compute a representative rules by our
-  alternative complete method to Kryszkiewicz
-.hist_BCRR, corresponding dict
+.mineQrRR to compute a representative rules by a slight variant of
+  the incomplete method of Kryszkiewicz
+.mineBTRR to compute a representative rules by our complete variant
+  of Kryszkiewicz
+
 
 Notes/ToDo:
+.hist fields for QrRR and BTRR
 .want to be able to use it on file containing larger-support closures
 .note: sometimes the supp is lower than what minsupp indicates; this may be
   due to an inappropriate closures file, or due to the fact that indeed there
@@ -95,23 +98,24 @@ class rerulattice(slattice):
         self.v.messg("...done.\n")
         return ants
 
-    def mineKrRR(self,suppthr,confthr,forget=False):
+    def mineQrRR(self,suppthr,confthr,forget=False):
         """
-        ditto, just that here we use the incomplete Krysz IDA 2001 heuristic
-        check whether this version finds empty antecedents
+        ditto, just that here we use our slight variant
+        of the incomplete Krysz IDA 2001 heuristic
+        check whether this version finds empty antecedents - yes it does
         """
         sthr = int(self.scale*suppthr)
         cthr = int(self.scale*confthr)
-        if (sthr,cthr) in self.hist_KrRR.keys():
-            return self.hist_KrRR[sthr,cthr]
+######        if (sthr,cthr) in self.hist_KrRR.keys():
+######            return self.hist_KrRR[sthr,cthr]
         self.v.zero(100)
-        self.v.inimessg("Computing representative rules at confidence "+str(confthr)+" using Kryszkiewicz's incomplete heuristic...")
+        self.v.inimessg("Computing representative rules at confidence "+str(confthr)+" using our slight variant of Kryszkiewicz's incomplete heuristic...")
         nonants = self.setcuts(sthr,cthr,forget,skip,cthr)[1]
         ants = corr()
         self.v.messg("computing potential antecedents...")
         for nod in self.closeds:
             """
-            see comments same place in mine RR - here using Kr Property 9
+            see comments same place in mine RR
             I had here a test self.scale*nod.supp >= sthr*self.cl.nrtr
             """
             self.v.tick()
@@ -130,10 +134,55 @@ class rerulattice(slattice):
         self.v.messg("...done.\n")
         return ants
 
+    def mineKrRR(self,suppthr,confthr,forget=False):
+        """
+        ditto, just that here we use 
+        the incomplete Krysz IDA 2001 heuristic
+        check whether this version finds empty antecedents - yes it does
+        """
+        sthr = int(self.scale*suppthr)
+        cthr = int(self.scale*confthr)
+        if (sthr,cthr) in self.hist_KrRR.keys():
+            return self.hist_KrRR[sthr,cthr]
+        self.v.zero(100)
+        self.v.inimessg("Computing representative rules at confidence "+str(confthr)+" using Kryszkiewicz's incomplete heuristic...")
+        nonants = self.setcuts(sthr,cthr,forget,kskip,cthr)[1]
+        ants = corr()
+        self.v.messg("computing potential antecedents...")
+        for nod in self.closeds:
+            """
+            see comments same place in mine RR - here using Kr Property 9
+            first we find out the Kr value for nod.mns
+            """
+            self.v.tick()
+            if  self.scale*nod.supp >= cthr*nod.kmns and \
+                self.scale*nod.mxs < cthr*nod.kmns:
+                "that was the test of Prop 9 - might add here supp constraint"
+                ants[nod] = []
+                for m in self._faces(nod,nonants[nod]).transv().hyedges:
+                    if m < nod:
+                        mm = self._findinmingens(nod,m)
+                        if mm==None: print m, "not found at", nod
+                        ants[nod].append(mm)
+        self.v.zero(500)
+        self.v.messg("...checking valid antecedents...")
+        ants.tighten(self.v)
+        self.v.messg("...done.\n")
+        return ants
+
 def skip(nod,cthr,scale):
     "what nodes not to skip at setcuts - is scale OK?"
     return scale*nod.supp < cthr*nod.mns or \
        scale*nod.mxs >= cthr*nod.mns
+
+def kskip(nod,cthr,scale):
+    "what nodes not to skip at setcuts - is scale OK?"
+    return scale*nod.supp < cthr*nod.kmns or \
+       scale*nod.mxs >= cthr*nod.kmns
+
+def dontskip(nod,cthr,scale):
+    "skip no nodes at setcuts - is scale OK?"
+    return False
 
 if __name__ == "__main__":
 
@@ -160,6 +209,10 @@ if __name__ == "__main__":
 
     ccc = 0.81
     
+    QrRRants = rl.mineQrRR(supp,ccc)
+
+    print printrules(QrRRants,rl.nrtr), "repr rules found with Qr at conf", ccc
+
     KrRRants = rl.mineKrRR(supp,ccc)
 
     print printrules(KrRRants,rl.nrtr), "repr rules found with Kr at conf", ccc
