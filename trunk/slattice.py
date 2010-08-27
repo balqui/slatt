@@ -110,6 +110,12 @@ class slattice(clattice):
                 mm.setsupp(nod.supp)
                 mm.clos = nod
                 self.mingens[nod].append(mm)
+            if len(self.mingens[nod]) == 1 and nod.card == self.mingens[nod][0].card:
+                "nod is a free set and its own unique mingen"
+                nod.kmns = nod.mns
+            else:
+                "nod has some proper subsets as mingens"
+                nod.kmns = nod.supp
         self.v.messg("...done;")
         return self.mingens
 
