@@ -1,7 +1,7 @@
 """
 Subproject: Slatt
 Package: rerulattice
-Programmers: JLB
+Programmers: JLB, CT
 
 Inherits from slattice, which brings cuts, mingens, and GDgens
 
@@ -30,7 +30,7 @@ Notes/ToDo:
 .revise and enlarge the local testing
 .revise ticking rates
 """
-
+import time
 from slattice import slattice
 from slarule import slarule
 from corr import corr
@@ -136,7 +136,7 @@ class rerulattice(slattice):
 
     def mineKrRR(self,suppthr,confthr,forget=False):
         """
-        ditto, just that here we use 
+        ditto, just that here we use
         the incomplete Krysz IDA 2001 heuristic
         check whether this version finds empty antecedents - yes it does
         """
@@ -191,33 +191,47 @@ if __name__ == "__main__":
 ##    forget = True
     forget = False
 
-##    filename = "pumsb_star"
-##    supp = 0.4
+##    filename = "example1"
+##    supp = 0.15
+####    ccc = 0.33
+##    ccc = 0.4
+##    filename = "example2"
+##    supp = 0.07
+##    ccc = 0.7
+##    filename = "example3"
+##    supp = 0.05
+##    ccc = 0.75
 
-    filename = "e13"
-    supp = 1.0/13
+    
+    filename = "adultrain"
+    supp = 0.05
+##    supp = 0.10
+    ccc = 0.6
+##    ccc = 0.7
+##    ccc = 0.8
 
+##    filename = "cestapos"
+##    supp = 0.05
+####    supp = 0.10
+####    supp = 0.15
+##    ccc = 0.7
+####    ccc = 0.8
+####    ccc = 0.9
+   
     rl = rerulattice(supp,filename)
-    
-##    print printrules(rl.mingens,rl.nrtr,file(filename+"_IFrl30s.txt","w")), "rules in the iteration free basis."
-    print printrules(rl.mingens,rl.nrtr), "rules in the iteration free basis."
-
-    rl.findGDgens()
-
-##    print printrules(rl.GDgens,rl.nrtr,file(filename+"_GDrl30s.txt","w")), "rules in the GD basis."
-    print printrules(rl.GDgens,rl.nrtr), "rules in the GD basis."
-
-    ccc = 0.81
-    
+    time1=time.time()
     QrRRants = rl.mineQrRR(supp,ccc)
-
+    time2=time.time()
     print printrules(QrRRants,rl.nrtr), "repr rules found with Qr at conf", ccc
-
+    time3=time.time()
     KrRRants = rl.mineKrRR(supp,ccc)
-
+    time4=time.time()
     print printrules(KrRRants,rl.nrtr), "repr rules found with Kr at conf", ccc
-
+    time5=time.time()
     RRants = rl.mineRR(supp,ccc)
-
-##    print printrules(RRants,rl.nrtr,file(filename+"_RR"+str(ccc)+"c30s.txt","w")), "repr rules found at conf..."
+    time6=time.time()
     print printrules(RRants,rl.nrtr), "repr rules found at conf", ccc
+    
+    print "Qr",time2-time1
+    print "Kr",time4-time3
+    print "RR",time6-time5
