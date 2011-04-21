@@ -178,21 +178,38 @@ class slattice(clattice):
                                     m1.mns = c2.supp
         self.v.messg("...done.\n")
 
+    def get_it_free(self,exact):
+        for r in exact:
+            c = set(r.cn)
+            c -= r.an
+            for s in exact:
+                if s.an < r.an:
+                    c -= s.cn
+            if len(c) > 0:
+                c = set2node(c)
+                c.setsupp(r.cn.supp)
+                yield slarule(r.an,c)
+
 if __name__ == "__main__":
 
     from slarule import slarule
     from slanode import str2node
     
 ## CHOOSE A DATASET:
-    filename = "e13"
+##    filename = "e13"
 
-#    filename = "lenses_recoded"
-    supp = 1.0/14
+##    filename = "lenses_recoded"
+##    supp = 1.0/14
+
+    filename = "toyGD"
+    supp = 0.01
 
 ##    filename = "pumsb_star"
 ##    filename = "mvotes"
 ##    filename = "toyGD"
-##    filename = "cmc_eindh4"
+##    filename = "cmc-full"
+##    filename = "adultrain"
+##    supp = 0.05 # good for adultrain and cmc-full
     
 
 ## CHOOSE A SUPPORT CONSTRAINT:
@@ -209,13 +226,16 @@ if __name__ == "__main__":
 
 ## CHOOSE WHAT TO SEE (recommended: see lattice only on toys):
 
-    see_whole_lattice = True
+    see_whole_lattice = False
     
 ## (recommended: first, just count them; see them only after you know how big they are)
-    see_it_free_basis = True
+    see_exact_basis = False
+    count_exact_basis = True
+
+    see_it_free_basis = False
     count_it_free_basis = True
 
-    see_GD_basis = True
+    see_GD_basis = False
     count_GD_basis = True
 
 
@@ -227,17 +247,29 @@ if __name__ == "__main__":
 
     print "Test _findinmingens:", la._findinmingens(la.closeds[6],str2node("a b"))
 
-    if count_it_free_basis or see_it_free_basis:
+    if count_exact_basis or see_exact_basis or count_it_free_basis or see_it_free_basis:
 
-        if see_it_free_basis: print "Iteration-free basis:"
+        if see_exact_basis: print "Exact basis:"
         cnt = 0
+        exact = []
         for c in la.closeds:
             for g in la.mingens[c]:
                 if g<c:
                     cnt += 1
                     r = slarule(g,c)
-                    if see_it_free_basis: 
+                    if see_exact_basis: 
                         print r, " [c:", r.conf(), "s:", r.supp(), "w:", r.width(la.nrtr), "]"
+                    if count_it_free_basis or see_itfree_basis: 
+                        exact.append(r)
+
+    if count_it_free_basis or see_it_free_basis:
+        
+        if see_it_free_basis: print "Iteration-free basis:"
+        cntIF = 0
+        for r in la.get_it_free(exact):
+            cntIF += 1
+            if see_it_free_basis: 
+                print r, " [c:", r.conf(), "s:", r.supp(), "w:", r.width(la.nrtr), "]"
 
     if count_GD_basis or see_GD_basis:
 
@@ -253,9 +285,13 @@ if __name__ == "__main__":
                 if see_GD_basis: 
                     print r, " [c:", r.conf(), "s:", r.supp(), "w:", r.width(la.nrtr), "]"
 
+        if count_exact_basis:
+            print
+            print cnt, "rules in the exact basis"
+
         if count_it_free_basis:
             print
-            print cnt, "rules in the iteration-free basis"
+            print cntIF, "rules in the iteration-free basis"
 
         if count_GD_basis: 
             print
