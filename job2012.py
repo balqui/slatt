@@ -42,37 +42,14 @@ class job:
             res = cb.add_eval(latt)
             print
             for c in res.keys():
-                for (a,i,e,b,d) in res[c]:
+                for (a,i,e) in res[c]:
                     print slarule(a,c)
                     print "       ", "clift:", i, "clev:", e
-                    print "       due to", slarule(b,d)
 ##            secondminer = self.brulatt.mineBstar
         else:
             print("Basis must be B*.")
-        aaaa = raw_input("Press return.")
-        exit(-1)
-        warn = ""
-        bv = ""
-        if boost>0:
-            print "Filtering rules at confidence boost", boost
-            warn = "Confidence-boost filtered "
-            bv = "_b%2.3f"%boost
-            cb = cboost(rules)
-            seconf = conf/boost
-            blockers = secondminer(self.supp,seconf)
-            survived = cb.filt(boost,latt,blockers)
-            rules = survived
-        count = None
-        if outrules:
-            outrulesfile = file(self.datasetfilename+basis2+("_c%2.3f"%conf)+("_s%2.3f"%self.supp)+bv+".txt","w")
-            count = printrules(rules,latt.nrtr,outrulesfile,doprint=True)
-        if show:
-            print "\n\n"
-            count = printrules(rules,latt.nrtr,outfile=None,doprint=True)
-        if not count:
-            count = printrules(rules,latt.nrtr,outfile=None,doprint=False)
-        print warn+basis2+" basis on "+self.datasetfilename+".txt has ", count, "rules of confidence at least", conf
-        return count
+            aaaa = raw_input("Press return.")
+            exit(-1)
 
 if __name__=="__main__":
 

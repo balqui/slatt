@@ -61,7 +61,6 @@ class cboost:
                     self.outcome[cn].append(an)
         return self.outcome
 
-## clift, clev...
     def add_eval(self,clatt):
         "clift, clev, maybe cboost... - SLOW"
         self.outcome = corr()
@@ -70,15 +69,10 @@ class cboost:
             if self.ants[cn]:
                 self.outcome[cn] = []
                 for an in self.ants[cn]:
-                    clan = clatt.close(an)
-                    if len(clan) > len(an):
-                        print "**** rule:", slarule(an,cn)
-                        print "**** cl ant:", clan
-                        print "****"
                     conf1 = float(cn.supp)/an.supp
                     cnr = cn.difference(an)
                     mxconfsub = 0
-                    mxconfant = None
+##                    mxconfant = None
                     for anr in allsubsets(set(an)):
                         "find max conf of a rule anr -> cnr"
                         canr = clatt.close(anr)
@@ -89,23 +83,19 @@ class cboost:
                         conf2 = float(ccc.supp)/canr.supp
                         if conf2 > mxconfsub:
                             mxconfsub = conf2
-                            mxconfant = anr
-                            mxconfcnr = cnr
+##                            mxconfant = canr
+##                            mxconfcnr = ccc
                     if mxconfsub > 0:
                          clift = conf1/mxconfsub
                          clev = conf1 - mxconfsub
-                         clant = mxconfant
-                         clcnr = mxconfcnr
-                         if clev > -0.001 and clev < 0.001:
-                             print "** rule:", slarule(an,cn)
-                             print "** cover:", slarule(anr,cc)
-                             print "** closures:", slarule(canr,ccc)
-                             print "**"
+##                         clant = mxconfant
+##                         clcnr = mxconfcnr
                     else:
                          clift = None
                          clev = None
                          clant = None
-                self.outcome[cn].append((an,clift,clev,clant,clcnr))
+##                self.outcome[cn].append((an,clift,clev,clant,clcnr))
+                self.outcome[cn].append((an,clift,clev))
         return self.outcome
 
 if __name__=="__main__":
