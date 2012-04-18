@@ -70,37 +70,42 @@ class cboost:
             if self.ants[cn]:
                 self.outcome[cn] = []
                 for an in self.ants[cn]:
+                    clan = clatt.close(an)
+                    if len(clan) > len(an):
+                        print "**** rule:", slarule(an,cn)
+                        print "**** cl ant:", clan
+                        print "****"
                     conf1 = float(cn.supp)/an.supp
                     cnr = cn.difference(an)
                     mxconfsub = 0
                     mxconfant = None
                     for anr in allsubsets(set(an)):
                         "find max conf of a rule anr -> cnr"
-                        if anr == an:
-                            break
+                        canr = clatt.close(anr)
+                        if canr == an:
+                            continue
                         cc = cnr.union(anr)
                         ccc = clatt.close(cc)
-                        if ccc != cn:
-                            print "**"
-                            print "** cn:", set(cn)
-                            print "** an:", set(an)
-                            print "** cnr:", set(cnr)
-                            print "** anr:", set(anr)
-                            print "** cc = cnr U anr:", set(cc)
-                            print "** cc clos:", ccc
-                        conf2 = float(ccc.supp)/clatt.close(anr).supp
+                        conf2 = float(ccc.supp)/canr.supp
                         if conf2 > mxconfsub:
                             mxconfsub = conf2
                             mxconfant = anr
+                            mxconfcnr = cnr
                     if mxconfsub > 0:
                          clift = conf1/mxconfsub
                          clev = conf1 - mxconfsub
                          clant = mxconfant
+                         clcnr = mxconfcnr
+                         if clev > -0.001 and clev < 0.001:
+                             print "** rule:", slarule(an,cn)
+                             print "** cover:", slarule(anr,cc)
+                             print "** closures:", slarule(canr,ccc)
+                             print "**"
                     else:
                          clift = None
                          clev = None
                          clant = None
-                self.outcome[cn].append((an,clift,clev,clant))
+                self.outcome[cn].append((an,clift,clev,clant,clcnr))
         return self.outcome
 
 if __name__=="__main__":

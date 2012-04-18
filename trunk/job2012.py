@@ -42,10 +42,10 @@ class job:
             res = cb.add_eval(latt)
             print
             for c in res.keys():
-                for (a,i,e,b) in res[c]:
+                for (a,i,e,b,d) in res[c]:
                     print slarule(a,c)
                     print "       ", "clift:", i, "clev:", e
-                    print "       due to", slarule(b,c)
+                    print "       due to", slarule(b,d)
 ##            secondminer = self.brulatt.mineBstar
         else:
             print("Basis must be B*.")
