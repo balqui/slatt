@@ -1,13 +1,16 @@
 from brulattice import brulattice
 from rerulattice import rerulattice
-from cboost import cboost
-from slarule import printrules
+from cboost2012 import cboost
+from slarule import printrules, slarule
 
 class job:
+    """more useful jobs in job.py
+    here only specifics for paper on conditional lift and leverage
+    working only on B* for the time being
+    """
 
     def __init__(self,datasetfilename,supp,verbose=True):
         """
-        duplicate lattice to be simplified (but first attempt failed)
         job consists of 
           dataset file name, extension ".txt" explicitly added
           support threshold in [0,1],
@@ -16,18 +19,17 @@ class job:
         self.datasetfilename = datasetfilename
         self.supp = supp
         self.brulatt = None
-        self.rerulatt = None
 
-    def run(self,basis,conf=1.0,boost=0.0,show=False,outrules=False,verbose=True):
+    def run(self,basis,conf=0.66,cblt=1.1,show=True,outrules=False,verbose=True):
         """
-        the run method consists of
-          target basis ("B*", "RR", or "GD")
+        the run method receives
+          basis, must be always B* for now
           confidence threshold in [0,1],
-          confidence boost threshold in [1,infty] recommended in [1,2], say 1.1
+          cblt threshold for cboost, clift, clev in [1,infty)
           show: whether rules will be shown interactively
           outrules: whether rules will be stored in a file
         """
-        basis2 = basis
+        boost = cblt
         if basis == "B*":
             basis2 = "Bstar" # for filenames
             if self.brulatt is None:
@@ -35,29 +37,20 @@ class job:
             self.brulatt.xmlize()
             self.brulatt.v.verb = verbose and self.verb
             latt = self.brulatt
-            rules = self.brulatt.mineBstar(self.supp,conf,cboobd=boost) # careful here
-            secondminer = self.brulatt.mineBstar
-        elif basis == "RR":
-            if self.rerulatt is None:
-                self.rerulatt = rerulattice(self.supp,self.datasetfilename,xmlinput=True)
-            self.rerulatt.xmlize()
-            self.rerulatt.v.verb = verbose and self.verb 
-            latt = self.rerulatt
-            rules = self.rerulatt.mineRR(self.supp,conf)
-            secondminer = self.rerulatt.mineRR
-        elif basis == "GD":
-            conf = 1.0
-            if self.rerulatt is None:
-                self.rerulatt = rerulattice(self.supp,self.datasetfilename)
-            self.rerulatt.v.verb = verbose and self.verb 
-            latt = self.rerulatt
-            self.rerulatt.findGDgens(self.supp)
-            rules = self.rerulatt.GDgens
-            secondminer = self.rerulatt.mineRR
+            rules = self.brulatt.mineBstar(self.supp,conf) ##,cboobd=boost) 
+            cb = cboost(rules)
+            res = cb.add_eval(latt)
+            print
+            for c in res.keys():
+                for (a,i,e,b) in res[c]:
+                    print slarule(a,c)
+                    print "       ", "clift:", i, "clev:", e
+                    print "       due to", slarule(b,c)
+##            secondminer = self.brulatt.mineBstar
         else:
-            "a print because there may be no lattice and no verbosity - to correct soon"
-            print "Basis unavailable; options: B*, RR, GD"
-            return 0
+            print("Basis must be B*.")
+        aaaa = raw_input("Press return.")
+        exit(-1)
         warn = ""
         bv = ""
         if boost>0:
@@ -78,7 +71,7 @@ class job:
             count = printrules(rules,latt.nrtr,outfile=None,doprint=True)
         if not count:
             count = printrules(rules,latt.nrtr,outfile=None,doprint=False)
-        print warn+basis+" basis on "+self.datasetfilename+".txt has ", count, "rules of confidence at least", conf
+        print warn+basis2+" basis on "+self.datasetfilename+".txt has ", count, "rules of confidence at least", conf
         return count
 
 if __name__=="__main__":
@@ -86,7 +79,5 @@ if __name__=="__main__":
     testjob = job("e13",1/13.01)
     testjob.run("B*",conf=0.6,show=True)
     testjob.run("B*",conf=0.55,show=False)
-    testjob.run("GD")
-    testjob.run("GD",outrules=True)
-    cnt = testjob.run("RR",conf=0.6,show=True)
-    print cnt
+    testjob.run("RR",conf=0.55,show=False)
+
