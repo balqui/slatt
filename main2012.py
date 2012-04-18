@@ -1,33 +1,30 @@
-from job import job
-from sys import exit
+from job2012 import job
 
-# CAVEAT: CHARACTER '/' IS ASSUMED NOT TO OCCUR AT ALL IN THE DATASET
+bgdsname = "lenses_recoded"
 
-# EXAMPLES OF USE OF THE job CLASS FOR RUNNING SLATT
+## len, pvotes at 0.3, pumsb_star at 0.4, toyNouRay at 0, e13 at 0.99/13
 
-# use Borgelt's apriori to compute all frequent closures
-# for a dataset and a support bound (in [0,1]):
-# items may be strings, not just numbers
-todayjob = job("lenses_recoded",0.001)
-##todayjob = job("len",0.001)
-##todayjob = job("pvotes",0.30)
+bgsupp = 0.001
 
-##todayjob = job("pumsb_star",supp=0.4)
-##todayjob = job("toyNouRay",supp=0)
-##anotherjob = job("e13",0.99/13)
+print("Computing closures on dataset %s at support %d..." % (bgdsname,bgsupp))
 
+todayjob = job(bgdsname,bgsupp)
 
-# compute B* basis, write the rules into a file 
-todayjob.run("B*",0.75,show=False,outrules=False)
+print("Computing B* basis at 0.75, no show, no write...")
 
-# compute representative rules, show in console and write on file
-todayjob.run("RR",0.75,show=False,outrules=True)
+todayjob.run("B*",0.75,show=True,outrules=False)
 
-# compute GD basis for conf 1
-todayjob.run("GD",show=False)
+aaaa = raw_input("Press return to close the window.")
+exit(0)
+
+print("Computing representative rules at 0.75, show in console and write on file...")
+todayjob.run("RR",0.75,show=True,outrules=True)
+
+print("Computing GD basis for conf 1...")
+todayjob.run("GD",show=True)
 
 #to apply confidence boost filter at level 1.2 to RR
-todayjob.run("RR",0.75,boost=1.2,show=True)
+todayjob.run("RR",0.75,boost=1.1,show=True)
 
 #now to B*, at boost 1.05, and reducing a bit the output verbosity
 ##todayjob.run("B*",0.75,boost=1.05,outrules=True,verbose=False)
@@ -39,30 +36,3 @@ todayjob.brulatt.xmlize()
 ## likewise for brulattices and rerulattices in a
 ## forthcoming version of slatt, but not in this one
 
-##next demo 
-##programming a sequence of experiments to create a plot
-
-##confs = [ 0.75, 0.85, 0.95 ]
-##
-##resultsRR = {}
-##
-##resultsBstar = {}
-##
-##for conf in confs:
-##    "representative rules"
-##    resultsRR[conf] = todayjob.run("RR",conf)
-##    resultsBstar[conf] = todayjob.run("B*",conf)
-##
-##print "\n\n  Data to plot:\n"
-##
-##print "Representative rules:"
-##print "conf num.rul"
-##for c in sorted(resultsRR.keys()):
-##    print c, resultsRR[c]
-##
-##print "B* basis:"
-##print "conf num.rul"
-##for c in sorted(resultsRR.keys()):
-##    print c, resultsBstar[c]
-##
-##
