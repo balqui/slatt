@@ -12,7 +12,7 @@ todayjob = job(bgdsname,bgsupp)
 
 print("Computing B* basis at 0.75, no show, no write...")
 
-todayjob.run("B*",0.75,show=True,outrules=False)
+todayjob.run("B*",0.75)
 
 aaaa = raw_input("Press return to close the window.")
 exit(0)
