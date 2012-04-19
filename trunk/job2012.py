@@ -20,14 +20,12 @@ class job:
         self.supp = supp
         self.brulatt = None
 
-    def run(self,basis,conf=0.66,cblt=1.1,show=True,outrules=False,verbose=True):
+    def run(self,basis,conf=0.66,cblt=1.1):
         """
         the run method receives
           basis, must be always B* for now
           confidence threshold in [0,1],
           cblt threshold for cboost, clift, clev in [1,infty)
-          show: whether rules will be shown interactively
-          outrules: whether rules will be stored in a file
         """
         boost = cblt
         if basis == "B*":
@@ -35,17 +33,30 @@ class job:
             if self.brulatt is None:
                 self.brulatt = brulattice(self.supp,self.datasetfilename,xmlinput=True)
             self.brulatt.xmlize()
-            self.brulatt.v.verb = verbose and self.verb
+            self.brulatt.v.verb = self.verb
             latt = self.brulatt
             rules = self.brulatt.mineBstar(self.supp,conf) ##,cboobd=boost) 
             cb = cboost(rules)
             res = cb.add_eval(latt)
-            print
+            outfilename = self.datasetfilename + "_" + basis2 
+            outfilename += ("_c%2.3f"%conf) 
+            outfilename += ("_s%2.3f"%self.supp)
+            outfilename += ("_l%2.3f"%cblt) + ".txt"
+            outfile = open(outfilename,"w")
+            outfile.write("num\tconf\tclift\tclev\tantec\t\tconseq\n")
+            count = 0
             for c in res.keys():
                 for (a,i,e) in res[c]:
-                    print slarule(a,c)
-                    print "       ", "clift:", i, "clev:", e
-##            secondminer = self.brulatt.mineBstar
+                    count += 1
+                    r = slarule(a,c)
+                    outfile.write(str(count) + " ")
+                    outfile.write(("%2.3f" % r.conf()) + " ")
+                    outfile.write(("%2.3f" % i) + " ")
+                    outfile.write(("%2.3f" % e) + " ")
+                    outfile.write(str(a) + " --> ")
+                    outfile.write(str(c) + "\n")
+            outfile.close()
+            print "\n\n", count, "rules written on file", outfilename
         else:
             print("Basis must be B*.")
             aaaa = raw_input("Press return.")
