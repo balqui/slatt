@@ -51,8 +51,14 @@ class job:
                     r = slarule(a,c)
                     outfile.write(str(count) + " ")
                     outfile.write(("%2.3f" % r.conf()) + " ")
-                    outfile.write(("%2.3f" % i) + " ")
-                    outfile.write(("%2.3f" % e) + " ")
+                    if i is not None:
+                        outfile.write(("%2.3f" % i) + " ")
+                    else:
+                        outfile.write((" -----") + " ")
+                    if e is not None:
+                        outfile.write(("%2.3f" % e) + " ")
+                    else:
+                        outfile.write((" -----") + " ")
                     outfile.write(str(a) + " --> ")
                     outfile.write(str(c) + "\n")
             outfile.close()
