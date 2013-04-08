@@ -1,5 +1,5 @@
- age=young prescription=myope astigmatism=no tears=reduced none
- age=young prescription=myope astigmatism=no tears=normal soft
+ age=young prescription=myope astigmatism=no tears=reduced none 
+ age=young prescription=myope astigmatism=no tears=normal soft 
  age=young prescription=myope astigmatism=yes tears=reduced none
  age=young prescription=myope astigmatism=yes tears=normal hard
  age=young prescription=hypermetrope astigmatism=no tears=reduced none
