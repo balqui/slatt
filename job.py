@@ -90,3 +90,4 @@ if __name__=="__main__":
     testjob.run("GD",outrules=True)
     cnt = testjob.run("RR",conf=0.6,show=True)
     print cnt
+
